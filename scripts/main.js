@@ -45,6 +45,36 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "twitchChatEnabled", {
+    name: "Show Twitch Chat",
+    hint: "Optional. Display Twitch chat in the stream overlay.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
+  game.settings.register(MODULE_ID, "twitchChannel", {
+    name: "Twitch Channel",
+    hint: "Your Twitch channel name only. Used only when Show Twitch Chat is enabled.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: ""
+  });
+
+  game.settings.register(MODULE_ID, "twitchChatPosition", {
+    name: "Twitch Chat Position",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      left: "Left",
+      right: "Right"
+    },
+    default: "right"
+  });
+
   game.settings.registerMenu(MODULE_ID, "obsHelper", {
     name: "OBS Browser Source",
     label: "Open OBS Setup",
@@ -108,6 +138,9 @@ function buildOverlayState() {
   const theme = game.settings.get(MODULE_ID, "theme");
   const showDeathSaves = game.settings.get(MODULE_ID, "showDeathSaves");
   const showGM = game.settings.get(MODULE_ID, "showGM");
+  const twitchChatEnabled = game.settings.get(MODULE_ID, "twitchChatEnabled");
+  const twitchChannel = String(game.settings.get(MODULE_ID, "twitchChannel") || "").trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  const twitchChatPosition = game.settings.get(MODULE_ID, "twitchChatPosition");
 
   const users = game.users
     .filter(u => u.active)
@@ -128,7 +161,18 @@ function buildOverlayState() {
     .filter(entry => showGM || !entry.isGM)
     .slice(0, 4);
 
-  return {shape, theme, showDeathSaves, users, updatedAt: Date.now()};
+  return {
+    shape,
+    theme,
+    showDeathSaves,
+    users,
+    twitch: {
+      enabled: Boolean(twitchChatEnabled && twitchChannel),
+      channel: twitchChannel,
+      position: twitchChatPosition
+    },
+    updatedAt: Date.now()
+  };
 }
 
 function broadcastOverlayState() {
@@ -142,6 +186,10 @@ function renderOverlay(root, state = buildOverlayState()) {
   if (!root) return;
   root.className = `fso-root theme-${state.theme} shape-${state.shape}`;
   root.innerHTML = "";
+
+  const players = document.createElement("div");
+  players.className = "fso-players";
+  root.appendChild(players);
 
   for (const entry of state.users) {
     const card = document.createElement("section");
@@ -163,8 +211,38 @@ function renderOverlay(root, state = buildOverlayState()) {
         `}
       </div>`;
 
-    root.appendChild(card);
+    players.appendChild(card);
   }
+
+  renderTwitchChat(root, state.twitch);
+}
+
+function renderTwitchChat(root, twitch) {
+  if (!twitch?.enabled || !twitch.channel) return;
+
+  const wrap = document.createElement("aside");
+  wrap.className = `fso-twitch-chat position-${twitch.position === "left" ? "left" : "right"}`;
+
+  const title = document.createElement("div");
+  title.className = "fso-chat-title";
+  title.textContent = "Twitch Chat";
+
+  const frame = document.createElement("iframe");
+  frame.className = "fso-chat-frame";
+  frame.title = "Twitch Chat";
+  frame.loading = "lazy";
+  frame.referrerPolicy = "strict-origin-when-cross-origin";
+  frame.src = buildTwitchChatURL(twitch.channel);
+
+  wrap.append(title, frame);
+  root.appendChild(wrap);
+}
+
+function buildTwitchChatURL(channel) {
+  const params = new URLSearchParams();
+  params.set("parent", window.location.hostname || "localhost");
+  params.set("darkpopout", "");
+  return `https://www.twitch.tv/embed/${encodeURIComponent(channel)}/chat?${params.toString()}`;
 }
 
 function deathSaveMarkup(death) {
