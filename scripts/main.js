@@ -190,26 +190,37 @@ function openLayoutEditor(){
   root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
 }
 
-class LayoutLauncher extends FormApplication {\n  static get defaultOptions(){return foundry.utils.mergeObject(super.defaultOptions,{id:"fso-layout-launcher",title:"Stream Overlay Layout",width:1,height:1});}\n  render(){openLayoutEditor();return this;}\n  async _updateObject(){}\n}\n\nclass OBSHelper extends FormApplication {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions,{
-      id:"foundry-stream-overlay-obs-helper",title:"Foundry Stream Overlay — OBS Setup",
-      template:"modules/foundry-stream-overlay/templates/obs-helper.hbs",width:660,height:"auto",closeOnSubmit:false
+const BaseApplication = foundry.applications.api.ApplicationV2;
+
+class LayoutLauncher extends BaseApplication {
+  render() {
+    openLayoutEditor();
+    return this;
+  }
+}
+
+class OBSHelper extends BaseApplication {
+  render() {
+    const overlayPath="Data/modules/foundry-stream-overlay/overlay/obs-overlay.html";
+    const connected=obsReady?"Connected":"Not connected";
+    const content=`
+      <div style="text-align:left;line-height:1.5">
+        <p><b>Status:</b> ${connected}</p>
+        <p>Add an OBS <b>Browser Source</b>, enable <b>Local file</b>, and select:</p>
+        <p><code>${overlayPath}</code></p>
+        <p>Set the Browser Source to <b>1920 × 1080</b>. No Foundry login or OBS Interact is required.</p>
+      </div>`;
+    foundry.applications.api.DialogV2.wait({
+      window:{title:"Foundry Stream Overlay — OBS Setup"},
+      content,
+      buttons:[
+        {action:"reconnect",label:"Reconnect to OBS",icon:"fas fa-plug",callback:async()=>{await connectOBS();}},
+        {action:"test",label:"Send Test Data",icon:"fas fa-paper-plane",callback:async()=>{await pushOverlay(true);ui.notifications.info("Test overlay data sent to OBS.");}},
+        {action:"close",label:"Close",default:true}
+      ]
     });
+    return this;
   }
-  getData() {
-    return {
-      overlayPath:"Data/modules/foundry-stream-overlay/overlay/obs-overlay.html",
-      connected:obsReady?"Connected":"Not connected",
-      width:1920,height:1080
-    };
-  }
-  activateListeners(html) {
-    super.activateListeners(html);
-    html.find('[data-action="reconnect"]').on("click",async e=>{e.preventDefault();await connectOBS();this.render();});
-    html.find('[data-action="test"]').on("click",async e=>{e.preventDefault();await pushOverlay(true);ui.notifications.info("Test overlay data sent to OBS.");});
-  }
-  async _updateObject(){}
 }
 
 window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
