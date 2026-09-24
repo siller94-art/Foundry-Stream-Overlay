@@ -94,6 +94,8 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
+  const overlayClient = isOverlayClient();
+
   window.FoundryStreamOverlay = {
     getState: buildOverlayState,
     renderInto: renderOverlay
@@ -103,6 +105,11 @@ Hooks.once("ready", () => {
   Hooks.on("updateUser", broadcastOverlayState);
   Hooks.on("createActor", broadcastOverlayState);
   Hooks.on("deleteActor", broadcastOverlayState);
+  Hooks.on("updateToken", broadcastOverlayState);
+
+  if (overlayClient) {
+    activateOBSOverlayMode();
+  }
 
   game.socket.on(`module.${MODULE_ID}`, data => {
     if (data?.type === "overlay-state") {
@@ -111,6 +118,7 @@ Hooks.once("ready", () => {
   });
 
   broadcastOverlayState();
+  if (overlayClient) renderOBSClient();
 });
 
 function getHP(actor) {
@@ -180,6 +188,36 @@ function broadcastOverlayState() {
   const payload = buildOverlayState();
   game.socket.emit(`module.${MODULE_ID}`, {type:"overlay-state", payload});
   window.dispatchEvent(new CustomEvent("foundry-stream-overlay-state", {detail: payload}));
+  if (isOverlayClient()) renderOBSClient(payload);
+}
+
+function isOverlayClient() {
+  return new URLSearchParams(window.location.search).get("fsoOverlay") === "1";
+}
+
+function activateOBSOverlayMode() {
+  document.documentElement.classList.add("fso-overlay-client");
+  document.body.classList.add("fso-overlay-client");
+
+  let root = document.getElementById("foundry-stream-overlay-root");
+  if (!root) {
+    root = document.createElement("main");
+    root.id = "foundry-stream-overlay-root";
+    document.body.appendChild(root);
+  }
+
+  // Keep the overlay above the Foundry game client while CSS disables the
+  // normal canvas and interface for a low-noise OBS Browser Source.
+  root.className = "fso-obs-root";
+}
+
+function renderOBSClient(state = buildOverlayState()) {
+  let root = document.getElementById("foundry-stream-overlay-root");
+  if (!root) {
+    activateOBSOverlayMode();
+    root = document.getElementById("foundry-stream-overlay-root");
+  }
+  renderOverlay(root, state);
 }
 
 function renderOverlay(root, state = buildOverlayState()) {
@@ -304,10 +342,11 @@ class OBSHelper extends FormApplication {
 }
 
 function getOBSOverlayURL() {
+  // Use the real Foundry game URL so OBS loads a normal Foundry client.
+  // The query flag tells this module to hide Foundry's interface and render
+  // only the transparent stream overlay.
   const url = new URL(window.location.href);
-  const route = foundry.utils.getRoute("modules/foundry-stream-overlay/overlay/overlay.html");
-  url.pathname = route;
-  url.search = "";
+  url.searchParams.set("fsoOverlay", "1");
   url.hash = "";
   return url.toString();
 }
