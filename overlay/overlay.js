@@ -6,7 +6,7 @@ function node(tag,cls,text){var n=document.createElement(tag);if(cls)n.className
 function pips(kind,count){var wrap=node("span","pips");for(var i=0;i<3;i++){wrap.appendChild(node("span","pip "+kind+(i<count?" on":"")))}return wrap}
 function render(state){
  var serial;try{serial=JSON.stringify(state)}catch(e){serial=""}if(serial&&serial===last)return;last=serial;
- root.className="theme-"+(state&&state.theme||"dark")+" "+(state&&state.shape||"circle");root.textContent="";
+ var theme=(state&&state.theme||"dark"),shape=(state&&state.shape||"circle");root.className="theme-"+theme+" "+shape;document.body.className="theme-"+theme+" "+shape;root.textContent="";
  var users=state&&Array.isArray(state.users)?state.users.slice(0,4):[];
  if(!users.length){root.appendChild(node("div","wait","Connected — waiting for active Foundry users…"));return}
  users.forEach(function(u,index){
