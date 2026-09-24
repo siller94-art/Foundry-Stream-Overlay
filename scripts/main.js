@@ -118,7 +118,10 @@ Hooks.once("ready", () => {
   });
 
   broadcastOverlayState();
-  if (overlayClient) renderOBSClient();
+  if (overlayClient) {
+    renderOBSClient();
+    setTimeout(checkOBSCanvas, 2500);
+  }
 });
 
 function getHP(actor) {
@@ -231,6 +234,20 @@ function renderOBSClient(state = buildOverlayState()) {
     root = document.getElementById("foundry-stream-overlay-root");
   }
   renderOverlay(root, state);
+}
+
+function checkOBSCanvas() {
+  if (!isOverlayClient()) return;
+  const board = document.getElementById("board");
+  const canvasEl = board?.querySelector("canvas") || document.querySelector("canvas");
+  const ready = Boolean(canvasEl && canvasEl.width > 0 && canvasEl.height > 0);
+  document.querySelector(".fso-obs-warning")?.remove();
+  if (ready) return;
+
+  const warning = document.createElement("div");
+  warning.className = "fso-obs-warning";
+  warning.textContent = "Foundry scene canvas is not rendering in this browser. In OBS: Settings → Advanced → Sources → toggle Browser Source Hardware Acceleration, restart OBS, then refresh this Browser Source.";
+  document.body.appendChild(warning);
 }
 
 function renderOverlay(root, state = buildOverlayState()) {
