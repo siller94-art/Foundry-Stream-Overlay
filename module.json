@@ -2,7 +2,7 @@
   "id": "foundry-stream-overlay",
   "title": "Foundry Stream Overlay",
   "description": "D&D 5e OBS game-view overlay for Foundry VTT with visible scene, Level, AC, HP, death saving throws, themes, portraits, and optional Twitch chat.",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "compatibility": {
     "minimum": "12",
     "verified": "13"
