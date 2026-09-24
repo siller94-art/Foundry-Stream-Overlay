@@ -106,6 +106,12 @@ Hooks.once("ready", () => {
   Hooks.on("createActor", broadcastOverlayState);
   Hooks.on("deleteActor", broadcastOverlayState);
   Hooks.on("updateToken", broadcastOverlayState);
+  Hooks.on("canvasReady", () => {
+    if (isOverlayClient()) {
+      renderOBSClient();
+      checkOBSCanvas();
+    }
+  });
 
   if (overlayClient) {
     activateOBSOverlayMode();
@@ -238,15 +244,15 @@ function renderOBSClient(state = buildOverlayState()) {
 
 function checkOBSCanvas() {
   if (!isOverlayClient()) return;
-  const board = document.getElementById("board");
-  const canvasEl = board?.querySelector("canvas") || document.querySelector("canvas");
-  const ready = Boolean(canvasEl && canvasEl.width > 0 && canvasEl.height > 0);
+
   document.querySelector(".fso-obs-warning")?.remove();
-  if (ready) return;
+
+  const foundryCanvasReady = Boolean(globalThis.canvas?.ready && globalThis.canvas?.scene);
+  if (foundryCanvasReady) return;
 
   const warning = document.createElement("div");
   warning.className = "fso-obs-warning";
-  warning.textContent = "Foundry scene canvas is not rendering in this browser. In OBS: Settings → Advanced → Sources → toggle Browser Source Hardware Acceleration, restart OBS, then refresh this Browser Source.";
+  warning.textContent = "Waiting for Foundry VTT scene canvas… If this remains visible, use OBS Browser Source → Interact and join the world as the Stream/Spectator user.";
   document.body.appendChild(warning);
 }
 
