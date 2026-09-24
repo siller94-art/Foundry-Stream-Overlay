@@ -1,0 +1,24 @@
+<form class="fso-obs-helper">
+  <p>Add a <strong>Browser Source</strong> in OBS and use the URL below. The page is transparent and designed to sit over your game/video layout.</p>
+
+  <div class="form-group">
+    <label for="fso-obs-url">OBS Browser Source URL</label>
+    <div class="form-fields">
+      <input id="fso-obs-url" type="text" value="{{obsUrl}}" readonly>
+      <button type="button" data-action="copy-url"><i class="fas fa-copy"></i> Copy OBS URL</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Recommended Size</label>
+    <div class="form-fields">
+      <input type="text" value="{{width}} × {{height}}" readonly>
+    </div>
+  </div>
+
+  <p class="notes">In OBS: Sources → + → Browser → paste this URL → set Width 1920 and Height 1080.</p>
+
+  <div class="form-group">
+    <button type="button" data-action="test-overlay"><i class="fas fa-external-link-alt"></i> Open / Test Overlay</button>
+  </div>
+</form>
