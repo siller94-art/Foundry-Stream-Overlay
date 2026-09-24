@@ -21,9 +21,11 @@ jobs:
           const html=fs.readFileSync('overlay/obs-overlay.html','utf8');
           const renderer=fs.readFileSync('overlay/overlay.js','utf8');
           const required=[
-            ['version',m.version==='0.9.1'],
+            ['version',m.version==='0.9.5'],
             ['Foundry 14.368',m.compatibility?.verified==='14.368'],
             ['editor',js.includes('Edit Overlay Layout')&&js.includes('openLayoutEditor')],
+            ['Notes tool',js.includes('getSceneControlButtons')&&js.includes('notes.tools.foundryStreamOverlay')],
+            ['no floating launcher',!js.includes('fso-left-overlay-button')],
             ['OBS test',js.includes('Reconnect / Test OBS')&&js.includes('CallVendorRequest')],
             ['GM + 3 players',js.includes('slice(0,3)')],
             ['death saves',js.includes('Show Death Saving Throws')],
