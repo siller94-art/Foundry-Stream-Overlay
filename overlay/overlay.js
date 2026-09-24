@@ -9,8 +9,8 @@ function render(state){
  root.className="theme-"+(state&&state.theme||"dark")+" "+(state&&state.shape||"circle");root.textContent="";
  var users=state&&Array.isArray(state.users)?state.users.slice(0,4):[];
  if(!users.length){root.appendChild(node("div","wait","Connected — waiting for active Foundry users…"));return}
- users.forEach(function(u){
-  var card=node("section","card"+(u.isGM?" gm":""));
+ users.forEach(function(u,index){
+  var card=node("section","card"+(u.isGM?" gm":""));\n  var pos=state.positions&&state.positions[u.id]||{x:.02+index*.245,y:.78};card.style.left=(Math.max(0,Math.min(.82,Number(pos.x)||0))*100)+"%";card.style.top=(Math.max(0,Math.min(.86,Number(pos.y)||0))*100)+"%";
   var img=node("img","portrait");img.alt="";if(u.image)img.src=u.image;card.appendChild(img);
   var meta=node("div","meta");meta.appendChild(node("div","name",u.name));
   if(u.isGM){meta.appendChild(node("div","role","Dungeon Master"));card.appendChild(meta);root.appendChild(card);return}
