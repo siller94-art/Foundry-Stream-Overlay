@@ -486,3 +486,12 @@ body.fso-overlay-client #board {
   min-height:32px;
 }
 .fso-journal-layout i{margin-right:6px}
+
+
+/* v0.9 frame preview: same four themes as OBS */
+.fso-layout-editor:before{content:"";position:absolute;inset:0;box-sizing:border-box;pointer-events:none;z-index:1;border:10px solid var(--fso-frame,#20262d);box-shadow:inset 0 0 0 2px var(--fso-trim,#8b744b),inset 0 0 0 5px var(--fso-frame,#20262d)}
+.fso-layout-editor.theme-dark{--fso-frame:#20262d;--fso-trim:#8b744b}
+.fso-layout-editor.theme-light{--fso-frame:#6f685d;--fso-trim:#b69a68}
+.fso-layout-editor.theme-nature{--fso-frame:#26372c;--fso-trim:#9a8653}
+.fso-layout-editor.theme-bronze{--fso-frame:#49372b;--fso-trim:#b58a55}
+.fso-layout-toolbar,.fso-layout-stage{z-index:2}
