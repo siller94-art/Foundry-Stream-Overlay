@@ -502,3 +502,26 @@ body.fso-overlay-client #board {
 .fso-layout-editor.theme-nature .fso-layout-card{background:rgba(38,55,44,.94);color:#f2f4ed;border-color:#9a8653}
 .fso-layout-editor.theme-bronze .fso-layout-card{background:rgba(73,55,43,.95);color:#f7ead7;border-color:#b58a55}
 .fso-layout-toolbar select{height:28px;min-width:110px;background:#222;color:#eee;border:1px solid #777;border-radius:4px}
+
+/* Permanent GM launcher aligned to Foundry's left control rail */
+.fso-left-overlay-button{
+  position:fixed;
+  left:7px;
+  top:238px;
+  z-index:99990;
+  width:34px;
+  height:34px;
+  min-width:34px;
+  padding:0;
+  margin:0;
+  display:grid;
+  place-items:center;
+  border:1px solid #6f675c;
+  border-radius:4px;
+  background:rgba(20,20,22,.94);
+  color:#ddd;
+  box-shadow:0 2px 7px rgba(0,0,0,.55);
+  font-size:15px;
+}
+.fso-left-overlay-button:hover{color:#fff;border-color:#b89b65}
+.fso-left-overlay-button i{margin:0}
