@@ -20,6 +20,8 @@ Hooks.once("init", () => {
   world("theme", "Overlay Theme", String, "dark", {choices:{dark:"Dark",light:"Light",nature:"Nature",bronze:"Bronze"}});
   world("showDeathSaves", "Show Death Saving Throws", Boolean, true);
   world("showGM", "Show GM Slot", Boolean, true);
+  world("editOverlay", "Edit Overlay Layout", Boolean, false, {hint:"Turn on and Save Changes to open the GM overlay editor.",onChange:async value=>{if(value){openLayoutEditor();await game.settings.set(MODULE_ID,"editOverlay",false);}}});
+  world("reconnectOBS", "Reconnect / Test OBS", Boolean, false, {hint:"Turn on and Save Changes to reconnect and send the current overlay.",onChange:async value=>{if(value){await connectOBS();setTimeout(()=>pushOverlay(true),750);await game.settings.set(MODULE_ID,"reconnectOBS",false);}}});
   world("layoutPositions", "Overlay Card Positions", String, "{}", {config:false});
 
   client("obsHost", "OBS WebSocket Host", String, "127.0.0.1");
@@ -59,7 +61,7 @@ function absoluteImageUrl(img) {
 }
 function buildOverlayState() {
   const showGM=game.settings.get(MODULE_ID,"showGM");
-  const users=game.users.filter(u=>u.active).map(user=>{
+  const entries=game.users.filter(u=>u.active).map(user=>{
     const actor=user.character;
     return {
       id:user.id, actorId:actor?.id??null,
@@ -67,7 +69,10 @@ function buildOverlayState() {
       image:absoluteImageUrl(actor?.img||"icons/svg/mystery-man.svg"),
       level:getLevel(actor), ac:getAC(actor), hp:getHP(actor), death:getDeathSaves(actor)
     };
-  }).filter(x=>showGM||!x.isGM).sort((a,b)=>Number(b.isGM)-Number(a.isGM)).slice(0,4);
+  });
+  const gm=entries.find(x=>x.isGM);
+  const players=entries.filter(x=>!x.isGM).slice(0,3);
+  const users=[...(showGM&&gm?[gm]:[]),...players].slice(0,4);
   return {
     v:2, present:true, users,
     shape:game.settings.get(MODULE_ID,"portraitShape"),
@@ -168,7 +173,7 @@ function openLayoutEditor(){
   closeLayoutEditor(); const state=buildOverlayState();
   const root=document.createElement("div");root.id="fso-layout-editor";root.className=`fso-layout-editor theme-${state.theme}`;
   root.style.width="100vw";root.style.height="100vh";
-  root.innerHTML='<div class="fso-layout-toolbar"><strong>OBS Overlay Layout</strong><span>Drag cards where you want them on stream.</span><button data-act="lock">Lock</button><button data-act="reset">Reset</button><button data-act="save">Save & Close</button><button data-act="close">Close</button></div><div class="fso-layout-stage"></div>';
+  root.innerHTML='<div class="fso-layout-toolbar"><strong>OBS Overlay Layout</strong><span>Drag cards where you want them on stream.</span><select data-act="theme"><option value="dark">Dark</option><option value="light">Muted Light</option><option value="nature">Nature</option><option value="bronze">Bronze</option></select><button data-act="lock">Lock</button><button data-act="reset">Reset</button><button data-act="save">Save & Close</button><button data-act="close">Close</button></div><div class="fso-layout-stage"></div>';
   document.body.appendChild(root);layoutEditorRoot=root;const stage=root.querySelector(".fso-layout-stage");
   const positions=state.positions||{};
   state.users.forEach((entry,index)=>{
@@ -179,6 +184,7 @@ function openLayoutEditor(){
     card.addEventListener("pointermove",e=>{if(!drag)return;const x=Math.max(0,Math.min(drag.sr.width-card.offsetWidth,e.clientX-drag.sr.left-drag.dx));const y=Math.max(0,Math.min(drag.sr.height-card.offsetHeight,e.clientY-drag.sr.top-drag.dy));card.style.left=x+"px";card.style.top=y+"px";});
     card.addEventListener("pointerup",()=>drag=null);
   });
+  const themeSelect=root.querySelector('[data-act="theme"]');themeSelect.value=state.theme;themeSelect.onchange=async e=>{const theme=e.currentTarget.value;root.className=`fso-layout-editor theme-${theme}`;await game.settings.set(MODULE_ID,"theme",theme);await pushOverlay(true);};
   root.querySelector('[data-act="lock"]').onclick=e=>{layoutLocked=!layoutLocked;e.currentTarget.textContent=layoutLocked?"Unlock":"Lock";root.classList.toggle("locked",layoutLocked);};
   root.querySelector('[data-act="reset"]').onclick=()=>{stage.querySelectorAll(".fso-layout-card").forEach((c,i)=>{c.style.left=(2+i*24.5)+"%";c.style.top="78%";});};
   root.querySelector('[data-act="save"]').onclick=saveLayoutPositions;
