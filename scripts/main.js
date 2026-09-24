@@ -199,10 +199,25 @@ function openLayoutEditor(){
   state.users.forEach((entry,index)=>{
     const card=overlayCardElement(entry,state),pos=positions[entry.id]||{x:.02+index*.245,y:.78};
     card.style.left=`${Math.max(0,Math.min(.82,pos.x))*100}%`;card.style.top=`${Math.max(0,Math.min(.86,pos.y))*100}%`;stage.appendChild(card);
-    let drag=null;
-    card.addEventListener("pointerdown",e=>{if(layoutLocked)return;e.preventDefault();const sr=stage.getBoundingClientRect();drag={startX:e.clientX,startY:e.clientY,baseDX:Number(card.dataset.dx||0),baseDY:Number(card.dataset.dy||0),sr};});
-    card.addEventListener("pointermove",e=>{if(!drag)return;e.preventDefault();const left=parseFloat(card.style.left)||0,top=parseFloat(card.style.top)||0;let dx=drag.baseDX+(e.clientX-drag.startX),dy=drag.baseDY+(e.clientY-drag.startY);dx=Math.max(-left,Math.min(drag.sr.width-card.offsetWidth-left,dx));dy=Math.max(-top,Math.min(drag.sr.height-card.offsetHeight-top,dy));card.dataset.dx=String(dx);card.dataset.dy=String(dy);card.style.transform=`translate3d(${dx}px,${dy}px,0)`;});
-    card.addEventListener("pointerup",()=>drag=null);card.addEventListener("pointerleave",()=>{if(drag)drag=null;});card.addEventListener("pointercancel",()=>drag=null);
+    card.addEventListener("pointerdown",e=>{
+      if(layoutLocked)return;
+      e.preventDefault();
+      const sr=stage.getBoundingClientRect();
+      const startX=e.clientX,startY=e.clientY,baseDX=Number(card.dataset.dx||0),baseDY=Number(card.dataset.dy||0);
+      const move=ev=>{
+        ev.preventDefault();
+        const left=parseFloat(card.style.left)||0,top=parseFloat(card.style.top)||0;
+        let dx=baseDX+(ev.clientX-startX),dy=baseDY+(ev.clientY-startY);
+        dx=Math.max(-left,Math.min(sr.width-card.offsetWidth-left,dx));
+        dy=Math.max(-top,Math.min(sr.height-card.offsetHeight-top,dy));
+        card.dataset.dx=String(dx);card.dataset.dy=String(dy);
+        card.style.transform=`translate3d(${dx}px,${dy}px,0)`;
+      };
+      const stop=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",stop);window.removeEventListener("pointercancel",stop);};
+      window.addEventListener("pointermove",move,{passive:false});
+      window.addEventListener("pointerup",stop,{once:true});
+      window.addEventListener("pointercancel",stop,{once:true});
+    });
   });
   const themeSelect=root.querySelector('[data-act="theme"]');themeSelect.value=state.theme;themeSelect.onchange=e=>{const theme=e.currentTarget.value;root.dataset.pendingTheme=theme;root.className=`fso-layout-editor theme-${theme}`;};
   root.querySelector('[data-act="lock"]').onclick=e=>{layoutLocked=!layoutLocked;e.currentTarget.textContent=layoutLocked?"Unlock":"Lock";root.classList.toggle("locked",layoutLocked);};
