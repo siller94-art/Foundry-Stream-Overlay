@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920,height=1080">
+<title>D&D Stream Frame - OBS</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
+body{position:relative;font-family:Georgia,"Times New Roman",serif}
+.frame{position:fixed;inset:0;box-sizing:border-box;border:12px solid #20262d;box-shadow:inset 0 0 0 2px #8b744b,inset 0 0 0 6px #20262d;pointer-events:none}
+.frame:before,.frame:after{content:"";position:absolute;left:82px;right:82px;height:6px;background:#20262d;border-top:1px solid #8b744b;border-bottom:1px solid #8b744b}
+.frame:before{top:-9px}.frame:after{bottom:-9px}
+.corner{position:absolute;width:54px;height:54px;display:grid;place-items:center;box-sizing:border-box;background:#20262d;border:2px solid #8b744b;color:#8b744b;font-size:30px;font-style:normal}
+.tl{left:-9px;top:-9px}.tr{right:-9px;top:-9px}.bl{left:-9px;bottom:-9px}.br{right:-9px;bottom:-9px}
+</style>
+</head>
+<body>
+<div class="frame" aria-hidden="true">
+<i class="corner tl">◇</i><i class="corner tr">◇</i>
+<i class="corner bl">◇</i><i class="corner br">◇</i>
+</div>
+</body>
+</html>
