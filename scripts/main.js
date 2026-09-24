@@ -20,6 +20,7 @@ Hooks.once("init", () => {
   world("theme", "Overlay Theme", String, "dark", {choices:{dark:"Dark",light:"Light",nature:"Nature",bronze:"Bronze"}});
   world("showDeathSaves", "Show Death Saving Throws", Boolean, true);
   world("showGM", "Show GM Slot", Boolean, true);
+  world("layoutPositions", "Overlay Card Positions", Object, {} , {config:false});
 
   client("obsHost", "OBS WebSocket Host", String, "127.0.0.1");
   client("obsPort", "OBS WebSocket Port", Number, 4455);
@@ -78,6 +79,7 @@ function buildOverlayState() {
     shape:game.settings.get(MODULE_ID,"portraitShape"),
     theme:game.settings.get(MODULE_ID,"theme"),
     showDeathSaves:game.settings.get(MODULE_ID,"showDeathSaves"),
+    positions:game.settings.get(MODULE_ID,"layoutPositions")||{},
     updatedAt:Date.now()
   };
 }
@@ -141,6 +143,53 @@ async function pushOverlay(force=false) {
   }
 }
 
+let layoutEditorRoot=null;
+let layoutLocked=false;
+
+function overlayCardElement(entry,state) {
+  const card=document.createElement("section");
+  card.className="fso-layout-card "+(entry.isGM?"gm ":"")+(state.shape||"circle");
+  card.dataset.userId=entry.id;
+  const img=document.createElement("img"); img.className="fso-layout-portrait"; img.src=entry.image||""; img.alt=""; card.appendChild(img);
+  const meta=document.createElement("div"); meta.className="fso-layout-meta";
+  const name=document.createElement("div"); name.className="fso-layout-name"; name.textContent=entry.name; meta.appendChild(name);
+  if(entry.isGM){const role=document.createElement("div");role.className="fso-layout-role";role.textContent="Dungeon Master";meta.appendChild(role);}
+  else {
+    const stats=document.createElement("div");stats.className="fso-layout-stats";stats.textContent=`LVL ${entry.level||"—"}   AC ${entry.ac||"—"}   HP ${entry.hp.value}/${entry.hp.max}`;meta.appendChild(stats);
+    if(state.showDeathSaves){const death=document.createElement("div");death.className="fso-layout-death";death.textContent=`Death Saving Throws  ✓ ${entry.death.successes}/3   ✕ ${entry.death.failures}/3`;meta.appendChild(death);}
+  }
+  card.appendChild(meta); return card;
+}
+function closeLayoutEditor(){layoutEditorRoot?.remove();layoutEditorRoot=null;}
+async function saveLayoutPositions(){
+  if(!layoutEditorRoot)return;
+  const box=layoutEditorRoot.getBoundingClientRect(), positions={};
+  layoutEditorRoot.querySelectorAll(".fso-layout-card").forEach(card=>{
+    positions[card.dataset.userId]={x:Number((parseFloat(card.style.left)/box.width).toFixed(5)),y:Number((parseFloat(card.style.top)/box.height).toFixed(5))};
+  });
+  await game.settings.set(MODULE_ID,"layoutPositions",positions);await pushOverlay(true);ui.notifications.info("Stream overlay layout saved.");
+}
+function openLayoutEditor(){
+  if(!game.user?.isGM)return;
+  closeLayoutEditor(); const state=buildOverlayState();
+  const root=document.createElement("div");root.id="fso-layout-editor";root.className=`fso-layout-editor theme-${state.theme}`;
+  root.innerHTML='<div class="fso-layout-toolbar"><strong>OBS Overlay Layout</strong><span>Drag cards where you want them on stream.</span><button data-act="lock">Lock</button><button data-act="reset">Reset</button><button data-act="save">Save & Close</button><button data-act="close">Close</button></div><div class="fso-layout-stage"></div>';
+  document.body.appendChild(root);layoutEditorRoot=root;const stage=root.querySelector(".fso-layout-stage");
+  const positions=state.positions||{};
+  state.users.forEach((entry,index)=>{
+    const card=overlayCardElement(entry,state),pos=positions[entry.id]||{x:.02+index*.245,y:.78};
+    card.style.left=`${Math.max(0,Math.min(.82,pos.x))*100}%`;card.style.top=`${Math.max(0,Math.min(.86,pos.y))*100}%`;stage.appendChild(card);
+    let drag=null;
+    card.addEventListener("pointerdown",e=>{if(layoutLocked)return;const r=card.getBoundingClientRect(),sr=stage.getBoundingClientRect();drag={dx:e.clientX-r.left,dy:e.clientY-r.top,sr};card.setPointerCapture(e.pointerId);});
+    card.addEventListener("pointermove",e=>{if(!drag)return;const x=Math.max(0,Math.min(drag.sr.width-card.offsetWidth,e.clientX-drag.sr.left-drag.dx));const y=Math.max(0,Math.min(drag.sr.height-card.offsetHeight,e.clientY-drag.sr.top-drag.dy));card.style.left=x+"px";card.style.top=y+"px";});
+    card.addEventListener("pointerup",()=>drag=null);
+  });
+  root.querySelector('[data-act="lock"]').onclick=e=>{layoutLocked=!layoutLocked;e.currentTarget.textContent=layoutLocked?"Unlock":"Lock";root.classList.toggle("locked",layoutLocked);};
+  root.querySelector('[data-act="reset"]').onclick=()=>{stage.querySelectorAll(".fso-layout-card").forEach((c,i)=>{c.style.left=(2+i*24.5)+"%";c.style.top="78%";});};
+  root.querySelector('[data-act="save"]').onclick=saveLayoutPositions;
+  root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
+}
+
 class OBSHelper extends FormApplication {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions,{
@@ -163,4 +212,5 @@ class OBSHelper extends FormApplication {
   async _updateObject(){}
 }
 
-window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState};
+window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
+Hooks.on("getSceneControlButtons",controls=>{if(!game.user?.isGM)return;const token=controls.find(c=>c.name==="token");if(token?.tools)token.tools.push({name:"fso-layout",title:"Stream Overlay Layout",icon:"fas fa-tv",button:true,onClick:openLayoutEditor});});
