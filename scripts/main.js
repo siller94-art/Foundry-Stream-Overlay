@@ -26,7 +26,7 @@ Hooks.once("init", () => {
   client("obsPort", "OBS WebSocket Port", Number, 4455);
   client("obsPassword", "OBS WebSocket Password", String, "");
 
-  game.settings.registerMenu(MODULE_ID, "obsHelper", {
+  game.settings.registerMenu(MODULE_ID, "layoutEditor", {\n    name:"Stream Overlay Layout", label:"Open Layout Editor",\n    hint:"Preview and drag the OBS cards directly over the Foundry scene.",\n    icon:"fas fa-tv", type:LayoutLauncher, restricted:true\n  });\n\n  game.settings.registerMenu(MODULE_ID, "obsHelper", {
     name:"OBS Overlay Setup", label:"Open OBS Setup",
     hint:"Set up the local OBS Browser Source. No Foundry login or OBS Interact is required.",
     icon:"fas fa-broadcast-tower", type:OBSHelper, restricted:true
@@ -190,7 +190,7 @@ function openLayoutEditor(){
   root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
 }
 
-class OBSHelper extends FormApplication {
+class LayoutLauncher extends FormApplication {\n  static get defaultOptions(){return foundry.utils.mergeObject(super.defaultOptions,{id:"fso-layout-launcher",title:"Stream Overlay Layout",width:1,height:1});}\n  render(){openLayoutEditor();return this;}\n  async _updateObject(){}\n}\n\nclass OBSHelper extends FormApplication {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions,{
       id:"foundry-stream-overlay-obs-helper",title:"Foundry Stream Overlay — OBS Setup",
@@ -213,4 +213,4 @@ class OBSHelper extends FormApplication {
 }
 
 window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
-Hooks.on("getSceneControlButtons",controls=>{if(!game.user?.isGM)return;const token=controls.find(c=>c.name==="token");if(token?.tools)token.tools.push({name:"fso-layout",title:"Stream Overlay Layout",icon:"fas fa-tv",button:true,onClick:openLayoutEditor});});
+Hooks.on("getSceneControlButtons",controls=>{\n  if(!game.user?.isGM)return;\n  const token=controls?.tokens||controls?.token;\n  if(!token)return;\n  const tool={name:"fso-layout",title:"Stream Overlay Layout",icon:"fas fa-tv",button:true,onChange:(_event,_tool,active)=>{if(active!==false)openLayoutEditor();}};\n  if(Array.isArray(token.tools)) token.tools.push({...tool,onClick:openLayoutEditor});\n  else token.tools={...(token.tools||{}),"fso-layout":tool};\n});
