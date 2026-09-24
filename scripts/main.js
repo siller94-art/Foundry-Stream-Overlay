@@ -45,6 +45,15 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.registerMenu(MODULE_ID, "obsHelper", {
+    name: "OBS Browser Source",
+    label: "Open OBS Setup",
+    hint: "Generate, copy, and test the transparent Browser Source URL for OBS.",
+    icon: "fas fa-broadcast-tower",
+    type: OBSHelper,
+    restricted: true
+  });
+
   game.settings.register(MODULE_ID, "showGM", {
     name: "Show GM Slot",
     scope: "world",
@@ -166,4 +175,61 @@ function deathSaveMarkup(death) {
 
 function escapeHtml(value="") {
   return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
+}
+
+
+class OBSHelper extends FormApplication {
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      id: "foundry-stream-overlay-obs-helper",
+      title: "Foundry Stream Overlay — OBS Setup",
+      template: "modules/foundry-stream-overlay/templates/obs-helper.hbs",
+      width: 620,
+      height: "auto",
+      closeOnSubmit: false
+    });
+  }
+
+  getData() {
+    const obsUrl = getOBSOverlayURL();
+    return {
+      obsUrl,
+      width: 1920,
+      height: 1080
+    };
+  }
+
+  activateListeners(html) {
+    super.activateListeners(html);
+
+    html.find('[data-action="copy-url"]').on("click", async event => {
+      event.preventDefault();
+      const url = getOBSOverlayURL();
+      try {
+        await navigator.clipboard.writeText(url);
+        ui.notifications.info("OBS overlay URL copied.");
+      } catch (_) {
+        const input = html.find("#fso-obs-url")[0];
+        input?.focus();
+        input?.select();
+        ui.notifications.warn("Select the URL and copy it manually.");
+      }
+    });
+
+    html.find('[data-action="test-overlay"]').on("click", event => {
+      event.preventDefault();
+      window.open(getOBSOverlayURL(), "FoundryStreamOverlayPreview", "width=1280,height=720");
+    });
+  }
+
+  async _updateObject() {}
+}
+
+function getOBSOverlayURL() {
+  const url = new URL(window.location.href);
+  const route = foundry.utils.getRoute("modules/foundry-stream-overlay/overlay/overlay.html");
+  url.pathname = route;
+  url.search = "";
+  url.hash = "";
+  return url.toString();
 }
