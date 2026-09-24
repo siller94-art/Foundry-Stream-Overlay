@@ -1,399 +1,166 @@
 const MODULE_ID = "foundry-stream-overlay";
+const OVERLAY_EVENT = "foundryStreamOverlayState";
+const HEARTBEAT_MS = 3000;
+
+let obsSocket = null;
+let obsReady = false;
+let obsRequestId = 0;
+const pending = new Map();
 
 Hooks.once("init", () => {
-  game.settings.register(MODULE_ID, "enabled", {
-    name: "Enable Stream Overlay",
-    hint: "Enable the transparent overlay output for OBS.",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: true
+  const world = (key, name, type, def, extra={}) => game.settings.register(MODULE_ID, key, {
+    name, scope:"world", config:true, type, default:def, ...extra
+  });
+  const client = (key, name, type, def, extra={}) => game.settings.register(MODULE_ID, key, {
+    name, scope:"client", config:true, type, default:def, ...extra
   });
 
-  game.settings.register(MODULE_ID, "portraitShape", {
-    name: "Portrait Shape",
-    hint: "Choose circle or square portraits in the overlay.",
-    scope: "world",
-    config: true,
-    type: String,
-    choices: {
-      circle: "Circle",
-      square: "Square"
-    },
-    default: "circle"
-  });
+  world("enabled", "Enable Stream Overlay", Boolean, true);
+  world("portraitShape", "Portrait Shape", String, "circle", {choices:{circle:"Circle",square:"Square"}});
+  world("theme", "Overlay Theme", String, "dark", {choices:{dark:"Dark",light:"Light",nature:"Nature",bronze:"Bronze"}});
+  world("showDeathSaves", "Show Death Saving Throws", Boolean, true);
+  world("showGM", "Show GM Slot", Boolean, true);
 
-  game.settings.register(MODULE_ID, "theme", {
-    name: "Overlay Theme",
-    scope: "world",
-    config: true,
-    type: String,
-    choices: {
-      dark: "Dark",
-      light: "Light",
-      nature: "Nature",
-      bronze: "Bronze"
-    },
-    default: "dark"
-  });
-
-  game.settings.register(MODULE_ID, "showDeathSaves", {
-    name: "Show Death Saves",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE_ID, "twitchChatEnabled", {
-    name: "Show Twitch Chat",
-    hint: "Optional. Display Twitch chat in the stream overlay.",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false
-  });
-
-  game.settings.register(MODULE_ID, "twitchChannel", {
-    name: "Twitch Channel",
-    hint: "Your Twitch channel name only. Used only when Show Twitch Chat is enabled.",
-    scope: "world",
-    config: true,
-    type: String,
-    default: ""
-  });
-
-  game.settings.register(MODULE_ID, "twitchChatPosition", {
-    name: "Twitch Chat Position",
-    scope: "world",
-    config: true,
-    type: String,
-    choices: {
-      left: "Left",
-      right: "Right"
-    },
-    default: "right"
-  });
+  client("obsHost", "OBS WebSocket Host", String, "127.0.0.1");
+  client("obsPort", "OBS WebSocket Port", Number, 4455);
+  client("obsPassword", "OBS WebSocket Password", String, "");
 
   game.settings.registerMenu(MODULE_ID, "obsHelper", {
-    name: "OBS Browser Source",
-    label: "Open OBS Setup",
-    hint: "Generate, copy, and test the transparent Browser Source URL for OBS.",
-    icon: "fas fa-broadcast-tower",
-    type: OBSHelper,
-    restricted: true
-  });
-
-  game.settings.register(MODULE_ID, "showGM", {
-    name: "Show GM Slot",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: true
+    name:"OBS Overlay Setup", label:"Open OBS Setup",
+    hint:"Set up the local OBS Browser Source. No Foundry login or OBS Interact is required.",
+    icon:"fas fa-broadcast-tower", type:OBSHelper, restricted:true
   });
 });
 
-Hooks.once("ready", () => {
-  const overlayClient = isOverlayClient();
-
-  window.FoundryStreamOverlay = {
-    getState: buildOverlayState,
-    renderInto: renderOverlay
-  };
-
-  Hooks.on("updateActor", broadcastOverlayState);
-  Hooks.on("updateUser", broadcastOverlayState);
-  Hooks.on("createActor", broadcastOverlayState);
-  Hooks.on("deleteActor", broadcastOverlayState);
-  Hooks.on("updateToken", broadcastOverlayState);
-  Hooks.on("canvasReady", () => {
-    if (isOverlayClient()) {
-      renderOBSClient();
-      checkOBSCanvas();
-    }
-  });
-
-  if (overlayClient) {
-    activateOBSOverlayMode();
+Hooks.once("ready", async () => {
+  if (!game.user?.isGM) return;
+  for (const hook of ["updateActor","updateUser","createActor","deleteActor","updateToken"]) {
+    Hooks.on(hook, () => pushOverlay());
   }
-
-  game.socket.on(`module.${MODULE_ID}`, data => {
-    if (data?.type === "overlay-state") {
-      window.dispatchEvent(new CustomEvent("foundry-stream-overlay-state", {detail: data.payload}));
-    }
-  });
-
-  broadcastOverlayState();
-  if (overlayClient) {
-    renderOBSClient();
-    setTimeout(checkOBSCanvas, 2500);
-  }
+  await connectOBS();
+  setInterval(() => pushOverlay(true), HEARTBEAT_MS);
 });
 
 function getHP(actor) {
-  const hp = actor?.system?.attributes?.hp;
-  return {
-    value: Number(hp?.value ?? 0),
-    max: Number(hp?.max ?? 0)
-  };
+  const hp=actor?.system?.attributes?.hp;
+  return {value:Number(hp?.value??0),max:Number(hp?.max??0)};
 }
-
-function getLevel(actor) {
-  return Number(actor?.system?.details?.level ?? 0);
-}
-
+function getLevel(actor) { return Number(actor?.system?.details?.level??0); }
 function getAC(actor) {
-  const ac = actor?.system?.attributes?.ac;
-  return Number(ac?.value ?? ac ?? 0);
+  const ac=actor?.system?.attributes?.ac;
+  return Number(ac?.value??ac??0);
 }
-
 function getDeathSaves(actor) {
-  const death = actor?.system?.attributes?.death;
-  return {
-    successes: Number(death?.success ?? 0),
-    failures: Number(death?.failure ?? 0)
-  };
+  const d=actor?.system?.attributes?.death;
+  return {successes:Number(d?.success??0),failures:Number(d?.failure??0)};
 }
-
-function actorPortrait(actor) {
-  return actor?.img || "icons/svg/mystery-man.svg";
+function absoluteImageUrl(img) {
+  if (!img) return "";
+  if (/^(https?:|data:)/i.test(img)) return img;
+  try {
+    const routed=foundry?.utils?.getRoute?.(img)??img;
+    return new URL(routed, window.location.href).href;
+  } catch { return img; }
 }
-
 function buildOverlayState() {
-  const shape = game.settings.get(MODULE_ID, "portraitShape");
-  const theme = game.settings.get(MODULE_ID, "theme");
-  const showDeathSaves = game.settings.get(MODULE_ID, "showDeathSaves");
-  const showGM = game.settings.get(MODULE_ID, "showGM");
-  const twitchChatEnabled = game.settings.get(MODULE_ID, "twitchChatEnabled");
-  const twitchChannel = String(game.settings.get(MODULE_ID, "twitchChannel") || "").trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
-  const twitchChatPosition = game.settings.get(MODULE_ID, "twitchChatPosition");
-
-  const users = game.users
-    .filter(u => u.active)
-    .map(user => {
-      const actor = user.character;
-      const hp = getHP(actor);
-      const death = getDeathSaves(actor);
-      const level = getLevel(actor);
-      const ac = getAC(actor);
-      return {
-        id: user.id,
-        name: actor?.name || user.name,
-        isGM: user.isGM,
-        image: actorPortrait(actor),
-        hp,
-        level,
-        ac,
-        death,
-        actorId: actor?.id || null
-      };
-    })
-    .filter(entry => showGM || !entry.isGM)
-    .slice(0, 4);
-
+  const showGM=game.settings.get(MODULE_ID,"showGM");
+  const users=game.users.filter(u=>u.active).map(user=>{
+    const actor=user.character;
+    return {
+      id:user.id, actorId:actor?.id??null,
+      name:actor?.name||user.name, isGM:user.isGM,
+      image:absoluteImageUrl(actor?.img||"icons/svg/mystery-man.svg"),
+      level:getLevel(actor), ac:getAC(actor), hp:getHP(actor), death:getDeathSaves(actor)
+    };
+  }).filter(x=>showGM||!x.isGM).sort((a,b)=>Number(b.isGM)-Number(a.isGM)).slice(0,4);
   return {
-    shape,
-    theme,
-    showDeathSaves,
-    users,
-    twitch: {
-      enabled: Boolean(twitchChatEnabled && twitchChannel),
-      channel: twitchChannel,
-      position: twitchChatPosition
-    },
-    updatedAt: Date.now()
+    v:2, present:true, users,
+    shape:game.settings.get(MODULE_ID,"portraitShape"),
+    theme:game.settings.get(MODULE_ID,"theme"),
+    showDeathSaves:game.settings.get(MODULE_ID,"showDeathSaves"),
+    updatedAt:Date.now()
   };
 }
 
-function broadcastOverlayState() {
-  if (!game.settings.get(MODULE_ID, "enabled")) return;
-  const payload = buildOverlayState();
-  game.socket.emit(`module.${MODULE_ID}`, {type:"overlay-state", payload});
-  window.dispatchEvent(new CustomEvent("foundry-stream-overlay-state", {detail: payload}));
-  if (isOverlayClient()) renderOBSClient(payload);
+async function sha256Base64(value) {
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  let binary=""; for (const b of new Uint8Array(digest)) binary+=String.fromCharCode(b);
+  return btoa(binary);
 }
-
-function isOverlayClient() {
-  return new URLSearchParams(window.location.search).get("fsoOverlay") === "1";
+async function obsAuth(password,salt,challenge) {
+  const secret=await sha256Base64(password+salt);
+  return sha256Base64(secret+challenge);
 }
+function obsRequest(requestType,requestData={}) {
+  if (!obsReady || obsSocket?.readyState!==WebSocket.OPEN) return Promise.reject(new Error("OBS not connected"));
+  const requestId=`fso-${++obsRequestId}`;
+  return new Promise((resolve,reject)=>{
+    pending.set(requestId,{resolve,reject});
+    obsSocket.send(JSON.stringify({op:6,d:{requestType,requestId,requestData}}));
+    setTimeout(()=>{ if(pending.delete(requestId)) reject(new Error("OBS request timeout")); },5000);
+  });
+}
+async function connectOBS() {
+  if (!game.user?.isGM) return;
+  obsReady=false;
+  try { obsSocket?.close(); } catch {}
+  const host=String(game.settings.get(MODULE_ID,"obsHost")||"127.0.0.1");
+  const port=Number(game.settings.get(MODULE_ID,"obsPort")||4455);
+  const password=String(game.settings.get(MODULE_ID,"obsPassword")||"");
+  const ws=new WebSocket(`ws://${host}:${port}`);
+  obsSocket=ws;
 
-function activateOBSOverlayMode() {
-  document.documentElement.classList.add("fso-overlay-client");
-  document.body.classList.add("fso-overlay-client");
-
-  let root = document.getElementById("foundry-stream-overlay-root");
-  if (!root) {
-    root = document.createElement("main");
-    root.id = "foundry-stream-overlay-root";
-    document.body.appendChild(root);
+  ws.addEventListener("message",async event=>{
+    let msg; try { msg=JSON.parse(event.data); } catch { return; }
+    if (msg.op===0) {
+      const identify={rpcVersion:1};
+      if (msg.d?.authentication) identify.authentication=await obsAuth(password,msg.d.authentication.salt,msg.d.authentication.challenge);
+      ws.send(JSON.stringify({op:1,d:identify}));
+    } else if (msg.op===2) {
+      obsReady=true;
+      ui.notifications.info("Foundry Stream Overlay connected to OBS.");
+      pushOverlay(true);
+    } else if (msg.op===7) {
+      const p=pending.get(msg.d?.requestId); if(!p) return;
+      pending.delete(msg.d.requestId);
+      msg.d?.requestStatus?.result ? p.resolve(msg.d.responseData||{}) : p.reject(new Error(msg.d?.requestStatus?.comment||"OBS request failed"));
+    }
+  });
+  ws.addEventListener("close",()=>{ obsReady=false; });
+  ws.addEventListener("error",()=>{ obsReady=false; });
+}
+async function pushOverlay(force=false) {
+  if (!game.user?.isGM || !game.settings.get(MODULE_ID,"enabled") || !obsReady) return;
+  try {
+    await obsRequest("CallVendorRequest",{
+      vendorName:"obs-browser", requestType:"emit_event",
+      requestData:{event_name:OVERLAY_EVENT,event_data:buildOverlayState()}
+    });
+  } catch (err) {
+    if (force) console.warn("Foundry Stream Overlay:",err);
   }
-
-  // Keep the overlay above the Foundry game client while CSS disables the
-  // normal canvas and interface for a low-noise OBS Browser Source.
-  root.className = "fso-obs-root";
 }
-
-function renderOBSClient(state = buildOverlayState()) {
-  let root = document.getElementById("foundry-stream-overlay-root");
-  if (!root) {
-    activateOBSOverlayMode();
-    root = document.getElementById("foundry-stream-overlay-root");
-  }
-  renderOverlay(root, state);
-}
-
-function checkOBSCanvas() {
-  if (!isOverlayClient()) return;
-
-  document.querySelector(".fso-obs-warning")?.remove();
-
-  const foundryCanvasReady = Boolean(globalThis.canvas?.ready && globalThis.canvas?.scene);
-  if (foundryCanvasReady) return;
-
-  const warning = document.createElement("div");
-  warning.className = "fso-obs-warning";
-  warning.textContent = "Waiting for Foundry VTT scene canvas… If this remains visible, use OBS Browser Source → Interact and join the world as the Stream/Spectator user.";
-  document.body.appendChild(warning);
-}
-
-function renderOverlay(root, state = buildOverlayState()) {
-  if (!root) return;
-  root.className = `fso-root theme-${state.theme} shape-${state.shape}`;
-  root.innerHTML = "";
-
-  const players = document.createElement("div");
-  players.className = "fso-players";
-  root.appendChild(players);
-
-  for (const entry of state.users) {
-    const card = document.createElement("section");
-    card.className = `fso-card ${entry.isGM ? "is-gm" : ""}`;
-
-    const hpMax = Math.max(1, entry.hp.max || 1);
-    const hpPct = Math.max(0, Math.min(100, (entry.hp.value / hpMax) * 100));
-
-    card.innerHTML = `
-      <div class="fso-portrait-wrap">
-        <img class="fso-portrait" src="${entry.image}" alt="">
-      </div>
-      <div class="fso-meta">
-        <div class="fso-name">${escapeHtml(entry.name)}</div>
-        ${entry.isGM ? '<div class="fso-role">Dungeon Master</div>' : `
-        <div class="fso-stats-row"><span><b>LVL</b> ${entry.level || "—"}</span><span><b>AC</b> ${entry.ac || "—"}</span><span><b>HP</b> ${entry.hp.value}/${entry.hp.max}</span></div>
-        <div class="fso-hp-track"><div class="fso-hp-fill" style="width:${hpPct}%"></div></div>
-        ${state.showDeathSaves ? deathSaveMarkup(entry.death) : ""}
-        `}
-      </div>`;
-
-    players.appendChild(card);
-  }
-
-  renderTwitchChat(root, state.twitch);
-}
-
-function renderTwitchChat(root, twitch) {
-  if (!twitch?.enabled || !twitch.channel) return;
-
-  const wrap = document.createElement("aside");
-  wrap.className = `fso-twitch-chat position-${twitch.position === "left" ? "left" : "right"}`;
-
-  const title = document.createElement("div");
-  title.className = "fso-chat-title";
-  title.textContent = "Twitch Chat";
-
-  const frame = document.createElement("iframe");
-  frame.className = "fso-chat-frame";
-  frame.title = "Twitch Chat";
-  frame.loading = "lazy";
-  frame.referrerPolicy = "strict-origin-when-cross-origin";
-  frame.src = buildTwitchChatURL(twitch.channel);
-
-  wrap.append(title, frame);
-  root.appendChild(wrap);
-}
-
-function buildTwitchChatURL(channel) {
-  const params = new URLSearchParams();
-  params.set("parent", window.location.hostname || "localhost");
-  params.set("darkpopout", "");
-  return `https://www.twitch.tv/embed/${encodeURIComponent(channel)}/chat?${params.toString()}`;
-}
-
-function deathSaveMarkup(death) {
-  const success = [0,1,2].map(i => `<span class="pip success ${i < death.successes ? "filled" : ""}"></span>`).join("");
-  const fail = [0,1,2].map(i => `<span class="pip fail ${i < death.failures ? "filled" : ""}"></span>`).join("");
-  return `<div class="fso-death"><span class="fso-death-label">Death Saving Throws</span><span class="fso-save-group"><small>Success</small><span class="pips">${success}</span></span><span class="fso-save-group"><small>Fail</small><span class="pips">${fail}</span></span></div>`;
-}
-
-function escapeHtml(value="") {
-  return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
-}
-
 
 class OBSHelper extends FormApplication {
   static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: "foundry-stream-overlay-obs-helper",
-      title: "Foundry Stream Overlay — OBS Setup",
-      template: "modules/foundry-stream-overlay/templates/obs-helper.hbs",
-      width: 620,
-      height: "auto",
-      closeOnSubmit: false
+    return foundry.utils.mergeObject(super.defaultOptions,{
+      id:"foundry-stream-overlay-obs-helper",title:"Foundry Stream Overlay — OBS Setup",
+      template:"modules/foundry-stream-overlay/templates/obs-helper.hbs",width:660,height:"auto",closeOnSubmit:false
     });
   }
-
   getData() {
-    const obsUrl = getOBSOverlayURL();
     return {
-      obsUrl,
-      width: 1920,
-      height: 1080
+      overlayPath:"Data/modules/foundry-stream-overlay/overlay/overlay.html",
+      connected:obsReady?"Connected":"Not connected",
+      width:1920,height:1080
     };
   }
-
   activateListeners(html) {
     super.activateListeners(html);
-
-    html.find('[data-action="copy-url"]').on("click", async event => {
-      event.preventDefault();
-      const url = getOBSOverlayURL();
-      try {
-        await navigator.clipboard.writeText(url);
-        ui.notifications.info("OBS overlay URL copied.");
-      } catch (_) {
-        const input = html.find("#fso-obs-url")[0];
-        input?.focus();
-        input?.select();
-        ui.notifications.warn("Select the URL and copy it manually.");
-      }
-    });
-
-    html.find('[data-action="test-overlay"]').on("click", event => {
-      event.preventDefault();
-      openOverlayTestInBrowser();
-    });
+    html.find('[data-action="reconnect"]').on("click",async e=>{e.preventDefault();await connectOBS();this.render();});
+    html.find('[data-action="test"]').on("click",async e=>{e.preventDefault();await pushOverlay(true);ui.notifications.info("Test overlay data sent to OBS.");});
   }
-
-  async _updateObject() {}
+  async _updateObject(){}
 }
 
-function openOverlayTestInBrowser() {
-  const url = getOBSOverlayURL();
-  // A normal _blank navigation opens the test in the user's default web browser
-  // rather than a constrained popup-style preview window.
-  const testWindow = window.open(url, "_blank");
-  if (!testWindow) {
-    navigator.clipboard?.writeText(url).catch(() => {});
-    ui.notifications.warn("The browser blocked the test tab. The overlay URL was copied; paste it into Google Chrome.");
-  }
-}
-
-function getOBSOverlayURL() {
-  // Use the real Foundry game URL so OBS loads a normal Foundry client.
-  // The query flag tells this module to hide Foundry's interface and render
-  // only the transparent stream overlay.
-  const url = new URL(window.location.href);
-  url.searchParams.set("fsoOverlay", "1");
-  url.hash = "";
-  return url.toString();
-}
+window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState};
