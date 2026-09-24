@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Foundry Stream Overlay</title>
+  <link rel="stylesheet" href="../styles/overlay.css">
+</head>
+<body>
+  <main id="overlay" class="fso-root"></main>
+  <script>
+    const root = document.getElementById("overlay");
+
+    function render(state) {
+      if (window.opener?.FoundryStreamOverlay?.renderInto) {
+        window.opener.FoundryStreamOverlay.renderInto(root, state);
+        return;
+      }
+      root.innerHTML = "";
+    }
+
+    window.addEventListener("message", event => {
+      if (event.data?.type === "foundry-stream-overlay-state") render(event.data.payload);
+    });
+
+    window.addEventListener("foundry-stream-overlay-state", event => render(event.detail));
+
+    try {
+      if (window.opener?.FoundryStreamOverlay?.getState) {
+        render(window.opener.FoundryStreamOverlay.getState());
+      }
+    } catch (_) {}
+  </script>
+</body>
+</html>
