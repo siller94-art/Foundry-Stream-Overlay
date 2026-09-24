@@ -29,7 +29,6 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   if (!game.user?.isGM) return;
-  installLayoutButton();
   for (const hook of ["updateActor","updateUser","createActor","deleteActor","updateToken"]) {
     Hooks.on(hook, () => pushOverlay());
   }
@@ -187,21 +186,22 @@ function openLayoutEditor(){
 }
 
 
-function installLayoutButton(){
-  if(document.getElementById("fso-open-layout")) return;
+Hooks.on("renderSidebarTab",(app,html)=>{
+  if(!game.user?.isGM) return;
+  const id=app?.options?.id||app?.id||app?.constructor?.name||"";
+  if(!String(id).toLowerCase().includes("journal")) return;
+  const root=html?.[0]||html;
+  if(!root?.querySelector||root.querySelector("#fso-journal-layout")) return;
   const btn=document.createElement("button");
-  btn.id="fso-open-layout";
+  btn.id="fso-journal-layout";
   btn.type="button";
+  btn.className="fso-journal-layout";
+  btn.innerHTML='<i class="fas fa-tv"></i> OBS Layout';
   btn.title="Open Stream Overlay Layout Editor";
-  btn.innerHTML='<i class="fas fa-tv"></i><span> OBS Layout</span>';
-  Object.assign(btn.style,{
-    position:"fixed",left:"12px",bottom:"72px",zIndex:"99999",
-    height:"34px",padding:"0 10px",border:"1px solid #8b7b62",
-    borderRadius:"4px",background:"rgba(20,20,22,.94)",color:"#eee",
-    fontSize:"12px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,.5)"
-  });
   btn.addEventListener("click",openLayoutEditor);
-  document.body.appendChild(btn);
-}
+  const footer=root.querySelector(".directory-footer")||root.querySelector("footer");
+  if(footer) footer.appendChild(btn);
+  else root.appendChild(btn);
+});
 
 window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
