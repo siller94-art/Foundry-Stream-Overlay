@@ -168,6 +168,7 @@ function openLayoutEditor(){
   if(!game.user?.isGM)return;
   closeLayoutEditor(); const state=buildOverlayState();
   const root=document.createElement("div");root.id="fso-layout-editor";root.className=`fso-layout-editor theme-${state.theme}`;
+  root.style.width="100vw";root.style.height="100vh";
   root.innerHTML='<div class="fso-layout-toolbar"><strong>OBS Overlay Layout</strong><span>Drag cards where you want them on stream.</span><button data-act="lock">Lock</button><button data-act="reset">Reset</button><button data-act="save">Save & Close</button><button data-act="close">Close</button></div><div class="fso-layout-stage"></div>';
   document.body.appendChild(root);layoutEditorRoot=root;const stage=root.querySelector(".fso-layout-stage");
   const positions=state.positions||{};
@@ -194,7 +195,7 @@ function installLayoutButton(){
   btn.title="Open Stream Overlay Layout Editor";
   btn.innerHTML='<i class="fas fa-tv"></i><span> OBS Layout</span>';
   Object.assign(btn.style,{
-    position:"fixed",left:"10px",top:"240px",zIndex:"99999",
+    position:"fixed",left:"12px",bottom:"72px",zIndex:"99999",
     height:"34px",padding:"0 10px",border:"1px solid #8b7b62",
     borderRadius:"4px",background:"rgba(20,20,22,.94)",color:"#eee",
     fontSize:"12px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,.5)"
