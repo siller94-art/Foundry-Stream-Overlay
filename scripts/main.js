@@ -347,11 +347,22 @@ class OBSHelper extends FormApplication {
 
     html.find('[data-action="test-overlay"]').on("click", event => {
       event.preventDefault();
-      window.open(getOBSOverlayURL(), "FoundryStreamOverlayPreview", "width=1280,height=720");
+      openOverlayTestInBrowser();
     });
   }
 
   async _updateObject() {}
+}
+
+function openOverlayTestInBrowser() {
+  const url = getOBSOverlayURL();
+  // A normal _blank navigation opens the test in the user's default web browser
+  // rather than a constrained popup-style preview window.
+  const testWindow = window.open(url, "_blank");
+  if (!testWindow) {
+    navigator.clipboard?.writeText(url).catch(() => {});
+    ui.notifications.warn("The browser blocked the test tab. The overlay URL was copied; paste it into Google Chrome.");
+  }
 }
 
 function getOBSOverlayURL() {
