@@ -29,8 +29,8 @@
 }
 
 .theme-light .fso-card {
-  background: rgba(230,230,230,.9);
-  color: #161616;
+  background: rgba(76,72,66,.92);
+  color: #f1eadc;
 }
 
 .theme-nature .fso-card {
@@ -495,3 +495,10 @@ body.fso-overlay-client #board {
 .fso-layout-editor.theme-nature{--fso-frame:#26372c;--fso-trim:#9a8653}
 .fso-layout-editor.theme-bronze{--fso-frame:#49372b;--fso-trim:#b58a55}
 .fso-layout-toolbar,.fso-layout-stage{z-index:2}
+
+/* Complete v0.9.1 editor theme matching */
+.fso-layout-editor.theme-dark .fso-layout-card{background:rgba(32,38,45,.94);color:#f4f1ea;border-color:#8b744b}
+.fso-layout-editor.theme-light .fso-layout-card{background:rgba(76,72,66,.94);color:#f1eadc;border-color:#b69a68}
+.fso-layout-editor.theme-nature .fso-layout-card{background:rgba(38,55,44,.94);color:#f2f4ed;border-color:#9a8653}
+.fso-layout-editor.theme-bronze .fso-layout-card{background:rgba(73,55,43,.95);color:#f7ead7;border-color:#b58a55}
+.fso-layout-toolbar select{height:28px;min-width:110px;background:#222;color:#eee;border:1px solid #777;border-radius:4px}
