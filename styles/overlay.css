@@ -1,11 +1,3 @@
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent !important;
-  overflow: hidden;
-}
-
 .fso-root {
   box-sizing: border-box;
   width: 100%;
@@ -222,10 +214,12 @@ html, body {
 /* OBS game-view mode: keep the Foundry scene visible and hide only GM controls. */
 html.fso-overlay-client,
 body.fso-overlay-client {
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
   overflow: hidden !important;
 }
 
-body.fso-overlay-client #interface,
 body.fso-overlay-client #ui-top,
 body.fso-overlay-client #ui-left,
 body.fso-overlay-client #ui-right,
@@ -451,4 +445,24 @@ body.fso-overlay-client canvas {
   font: 13px Arial, sans-serif;
   text-align: center;
   pointer-events: none;
+}
+
+
+/* v0.6.0 / Foundry V14: never alter normal player-client page/background. */
+html:not(.fso-overlay-client) #foundry-stream-overlay-root,
+body:not(.fso-overlay-client) #foundry-stream-overlay-root {
+  display: none !important;
+}
+
+/* Preserve Foundry V14's canvas/interface container; hide only interactive chrome. */
+body.fso-overlay-client #interface {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body.fso-overlay-client #board {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
