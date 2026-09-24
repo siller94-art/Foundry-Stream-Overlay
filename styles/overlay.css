@@ -190,11 +190,9 @@ html, body {
 }
 
 
-/* OBS client mode: the Browser Source loads the real Foundry world with
-   ?fsoOverlay=1, then this module removes the normal game presentation. */
+/* OBS game-view mode: keep the Foundry scene visible and hide only GM controls. */
 html.fso-overlay-client,
 body.fso-overlay-client {
-  background: transparent !important;
   overflow: hidden !important;
 }
 
@@ -209,50 +207,14 @@ body.fso-overlay-client #controls,
 body.fso-overlay-client #hotbar,
 body.fso-overlay-client #players,
 body.fso-overlay-client #pause,
-body.fso-overlay-client #notifications,
-body.fso-overlay-client #board,
-body.fso-overlay-client canvas {
+body.fso-overlay-client #notifications {
   display: none !important;
 }
 
-body.fso-overlay-client #foundry-stream-overlay-root {
-  display: flex !important;
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 2147483647 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: transparent !important;
-  pointer-events: none !important;
-}
-
-body.fso-overlay-client #foundry-stream-overlay-root .fso-twitch-chat {
-  pointer-events: auto !important;
-}
-
-
-/* Dedicated OBS client mode. */
-html.fso-overlay-client,
-body.fso-overlay-client {
-  background: transparent !important;
-  overflow: hidden !important;
-}
-
-body.fso-overlay-client #interface,
-body.fso-overlay-client #ui-top,
-body.fso-overlay-client #ui-left,
-body.fso-overlay-client #ui-right,
-body.fso-overlay-client #ui-bottom,
-body.fso-overlay-client #sidebar,
-body.fso-overlay-client #navigation,
-body.fso-overlay-client #controls,
-body.fso-overlay-client #hotbar,
-body.fso-overlay-client #players,
-body.fso-overlay-client #pause,
-body.fso-overlay-client #notifications,
+/* Do NOT hide #board or canvas: the active Foundry scene is the stream background. */
 body.fso-overlay-client #board,
 body.fso-overlay-client canvas {
-  display: none !important;
+  visibility: visible !important;
 }
 
 body.fso-overlay-client #foundry-stream-overlay-root {
