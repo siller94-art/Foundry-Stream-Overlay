@@ -150,7 +150,7 @@ class OBSHelper extends FormApplication {
   }
   getData() {
     return {
-      overlayPath:"Data/modules/foundry-stream-overlay/overlay/overlay.html",
+      overlayPath:"Data/modules/foundry-stream-overlay/overlay/obs-overlay.html",
       connected:obsReady?"Connected":"Not connected",
       width:1920,height:1080
     };
