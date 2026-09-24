@@ -32,18 +32,20 @@ Then enable **Foundry Stream Overlay** in your world.
 
 ## OBS setup
 
+Version 0.4.0 uses a dedicated Foundry client for OBS instead of the old static HTML file.
+
 1. Start Foundry VTT and enter the world.
-2. Enable the module.
-3. Add a **Browser Source** in OBS.
-4. Point that Browser Source at the overlay page exposed by your Foundry host.
-5. Recommended source size: **1920 × 1080**.
-6. Keep the browser background transparent.
+2. Enable **Foundry Stream Overlay**.
+3. Open **Game Settings → Configure Settings → Module Settings → Foundry Stream Overlay → OBS Browser Source**.
+4. Click **Copy OBS URL**.
+5. In OBS add **Sources → + → Browser**.
+6. Paste the generated URL and use **1920 × 1080**.
+7. If the OBS browser needs to join the Foundry world, use OBS **Interact** to complete the Foundry join/login once.
+8. Refresh the Browser Source.
 
-The intended overlay file is:
+The generated address uses `?fsoOverlay=1`. In this mode the normal Foundry interface and canvas are hidden and only the transparent stream overlay is rendered.
 
-`modules/foundry-stream-overlay/overlay/overlay.html`
-
-For a locally hosted Foundry instance this is typically available under the same Foundry base URL.
+Do not use the old `modules/foundry-stream-overlay/overlay/overlay.html` address. That file can be served as source text by Foundry and is no longer the OBS entry point.
 
 ## Settings
 
@@ -66,7 +68,7 @@ Available settings:
 
 GMs can open **Game Settings → Configure Settings → Module Settings → Foundry Stream Overlay → OBS Browser Source**.
 
-The helper automatically builds the overlay address from the current Foundry host and provides:
+The helper automatically builds the dedicated overlay address from the current Foundry world URL and provides:
 
 - **Copy OBS URL**
 - **Open / Test Overlay**
