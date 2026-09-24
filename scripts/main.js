@@ -129,6 +129,15 @@ function getHP(actor) {
   };
 }
 
+function getLevel(actor) {
+  return Number(actor?.system?.details?.level ?? 0);
+}
+
+function getAC(actor) {
+  const ac = actor?.system?.attributes?.ac;
+  return Number(ac?.value ?? ac ?? 0);
+}
+
 function getDeathSaves(actor) {
   const death = actor?.system?.attributes?.death;
   return {
@@ -156,12 +165,16 @@ function buildOverlayState() {
       const actor = user.character;
       const hp = getHP(actor);
       const death = getDeathSaves(actor);
+      const level = getLevel(actor);
+      const ac = getAC(actor);
       return {
         id: user.id,
         name: actor?.name || user.name,
         isGM: user.isGM,
         image: actorPortrait(actor),
         hp,
+        level,
+        ac,
         death,
         actorId: actor?.id || null
       };
@@ -243,7 +256,7 @@ function renderOverlay(root, state = buildOverlayState()) {
       <div class="fso-meta">
         <div class="fso-name">${escapeHtml(entry.name)}</div>
         ${entry.isGM ? '<div class="fso-role">Dungeon Master</div>' : `
-        <div class="fso-hp-row"><span>HP ${entry.hp.value}/${entry.hp.max}</span></div>
+        <div class="fso-stats-row"><span><b>LVL</b> ${entry.level || "—"}</span><span><b>AC</b> ${entry.ac || "—"}</span><span><b>HP</b> ${entry.hp.value}/${entry.hp.max}</span></div>
         <div class="fso-hp-track"><div class="fso-hp-fill" style="width:${hpPct}%"></div></div>
         ${state.showDeathSaves ? deathSaveMarkup(entry.death) : ""}
         `}
@@ -286,7 +299,7 @@ function buildTwitchChatURL(channel) {
 function deathSaveMarkup(death) {
   const success = [0,1,2].map(i => `<span class="pip success ${i < death.successes ? "filled" : ""}"></span>`).join("");
   const fail = [0,1,2].map(i => `<span class="pip fail ${i < death.failures ? "filled" : ""}"></span>`).join("");
-  return `<div class="fso-death"><span>Death Saves</span><span class="pips">${success}${fail}</span></div>`;
+  return `<div class="fso-death"><span class="fso-death-label">Death Saving Throws</span><span class="fso-save-group"><small>Success</small><span class="pips">${success}</span></span><span class="fso-save-group"><small>Fail</small><span class="pips">${fail}</span></span></div>`;
 }
 
 function escapeHtml(value="") {
