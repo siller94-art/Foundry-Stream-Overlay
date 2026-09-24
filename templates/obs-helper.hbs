@@ -1,26 +1,18 @@
 <form class="fso-obs-helper">
-  <p>Add a <strong>Browser Source</strong> in OBS and use the URL below. The page is transparent and designed to sit over your game/video layout.</p>
-
+  <h2>OBS Setup — No Foundry Login</h2>
+  <p><strong>Status:</strong> {{connected}}</p>
+  <p>This overlay does not open Foundry inside OBS. Do not use OBS Interact and do not log a Foundry user into the Browser Source.</p>
+  <ol>
+    <li>In OBS, open <strong>Tools → WebSocket Server Settings</strong> and enable the WebSocket server.</li>
+    <li>In Foundry module settings, enter the same OBS host, port, and WebSocket password.</li>
+    <li>In OBS add <strong>Sources → + → Browser</strong>.</li>
+    <li>Turn on <strong>Local file</strong> and browse to:<br><code>{{overlayPath}}</code></li>
+    <li>Set Width to <strong>{{width}}</strong> and Height to <strong>{{height}}</strong>.</li>
+    <li>Place your normal Foundry Window/Game Capture underneath this transparent Browser Source.</li>
+  </ol>
+  <p class="notes">The Browser Source contains only the GM/player HUD. Foundry sends LVL, AC, HP, and Death Saving Throws directly to OBS.</p>
   <div class="form-group">
-    <label for="fso-obs-url">OBS Browser Source URL</label>
-    <div class="form-fields">
-      <input id="fso-obs-url" type="text" value="{{obsUrl}}" readonly>
-      <button type="button" data-action="copy-url"><i class="fas fa-copy"></i> Copy OBS URL</button>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label>Recommended Size</label>
-    <div class="form-fields">
-      <input type="text" value="{{width}} × {{height}}" readonly>
-    </div>
-  </div>
-
-  <p class="notes"><strong>OBS:</strong> Sources → + → Browser → paste this URL → set Width 1920 and Height 1080.</p>
-  <p class="notes"><strong>First OBS login:</strong> Right-click the Browser Source → <strong>Interact</strong> → select your dedicated Stream/Spectator Foundry user → enter its password if required → Join Game. OBS keeps its own browser session, separate from Chrome.</p>
-  <p class="notes"><strong>Test Overlay</strong> opens the URL in a normal browser tab so you can verify the overlay separately from OBS.</p>
-
-  <div class="form-group">
-    <button type="button" data-action="test-overlay"><i class="fas fa-external-link-alt"></i> Open Test in Browser</button>
+    <button type="button" data-action="reconnect"><i class="fas fa-plug"></i> Reconnect to OBS</button>
+    <button type="button" data-action="test"><i class="fas fa-vial"></i> Send Test Data</button>
   </div>
 </form>
