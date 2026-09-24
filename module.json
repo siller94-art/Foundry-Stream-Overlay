@@ -2,7 +2,7 @@
   "id": "foundry-stream-overlay",
   "title": "Foundry Stream Overlay",
   "description": "Lightweight OBS browser-source overlay for Foundry VTT with live HP, death saves, themes, and portrait shape controls.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "compatibility": {
     "minimum": "12",
     "verified": "13"
