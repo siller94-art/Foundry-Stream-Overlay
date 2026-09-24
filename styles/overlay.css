@@ -469,23 +469,16 @@ body.fso-overlay-client #board {
 
 
 /* GM-only OBS layout editor */
-.fso-layout-editor{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.12);pointer-events:auto}
-.fso-layout-toolbar{position:absolute;z-index:2;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #777;border-radius:6px;background:rgba(18,18,20,.95);color:#eee;font:13px Arial,sans-serif;box-shadow:0 4px 14px #000}
+.fso-layout-editor{position:fixed;inset:0;z-index:100000;background:transparent;pointer-events:none}
+.fso-layout-toolbar{pointer-events:auto;position:absolute;z-index:2;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #777;border-radius:6px;background:rgba(18,18,20,.95);color:#eee;font:13px Arial,sans-serif;box-shadow:0 4px 14px #000}
 .fso-layout-toolbar span{opacity:.72}.fso-layout-toolbar button{height:28px}
-.fso-layout-stage{position:absolute;inset:0;overflow:hidden}
-.fso-layout-card{position:absolute;box-sizing:border-box;width:23%;max-width:360px;height:150px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:11px;align-items:center;padding:11px;overflow:hidden;background:rgba(20,20,22,.9);color:#f4f1ea;border:1px solid rgba(255,255,255,.28);box-shadow:0 8px 22px rgba(0,0,0,.45);cursor:grab;user-select:none;touch-action:none}
+.fso-layout-stage{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.fso-layout-card{pointer-events:auto;position:absolute;box-sizing:border-box;width:23%;max-width:360px;height:150px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:11px;align-items:center;padding:11px;overflow:hidden;background:rgba(20,20,22,.9);color:#f4f1ea;border:1px solid rgba(255,255,255,.28);box-shadow:0 8px 22px rgba(0,0,0,.45);cursor:grab;user-select:none;touch-action:none}
 .fso-layout-card:active{cursor:grabbing}.fso-layout-editor.locked .fso-layout-card{cursor:not-allowed}
 .fso-layout-portrait{box-sizing:border-box;width:92px;height:92px;object-fit:cover;border:2px solid #b99655}.fso-layout-card.circle .fso-layout-portrait{border-radius:50%}.fso-layout-card.square .fso-layout-portrait{border-radius:4px}
 .fso-layout-meta{min-width:0;overflow:hidden}.fso-layout-name{font:700 18px Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fso-layout-role{margin-top:4px;font:12px Arial,sans-serif;opacity:.72}.fso-layout-stats{margin-top:8px;font:12px Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fso-layout-death{margin-top:8px;font:10px Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 
-/* Journal Notes sidebar launcher — follows Foundry button styling */
-.fso-journal-layout{
-  width:100%;
-  margin:4px 0 0;
-  min-height:32px;
-}
-.fso-journal-layout i{margin-right:6px}
 
 
 /* v0.9 frame preview: same four themes as OBS */
@@ -503,31 +496,9 @@ body.fso-overlay-client #board {
 .fso-layout-editor.theme-bronze .fso-layout-card{background:rgba(73,55,43,.95);color:#f7ead7;border-color:#b58a55}
 .fso-layout-toolbar select{height:28px;min-width:110px;background:#222;color:#eee;border:1px solid #777;border-radius:4px}
 
-/* Permanent GM launcher aligned to Foundry's left control rail */
-.fso-left-overlay-button{
-  position:fixed;
-  left:7px;
-  top:238px;
-  z-index:99990;
-  width:34px;
-  height:34px;
-  min-width:34px;
-  padding:0;
-  margin:0;
-  display:grid;
-  place-items:center;
-  border:1px solid #6f675c;
-  border-radius:4px;
-  background:rgba(20,20,22,.94);
-  color:#ddd;
-  box-shadow:0 2px 7px rgba(0,0,0,.55);
-  font-size:15px;
-}
-.fso-left-overlay-button:hover{color:#fff;border-color:#b89b65}
-.fso-left-overlay-button i{margin:0}
 
 /* v0.9.4 editor performance/stability */
 .fso-layout-editor{contain:layout paint;backdrop-filter:none!important}
-.fso-layout-stage{contain:layout paint}
+.fso-layout-stage{contain:layout paint;pointer-events:none}
 .fso-layout-card{will-change:left,top;backdrop-filter:none!important}
 .fso-layout-editor .fso-layout-card *{pointer-events:none}
