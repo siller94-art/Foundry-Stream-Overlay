@@ -58,4 +58,14 @@ Available settings:
 
 ## Notes
 
-This is an early standalone build. The OBS browser-source bridge and automatic source URL helper will be expanded as the module matures.
+## OBS URL helper
+
+GMs can open **Game Settings → Configure Settings → Module Settings → Foundry Stream Overlay → OBS Browser Source**.
+
+The helper automatically builds the overlay address from the current Foundry host and provides:
+
+- **Copy OBS URL**
+- **Open / Test Overlay**
+- Recommended **1920 × 1080** Browser Source dimensions
+
+No manual URL construction is required.
