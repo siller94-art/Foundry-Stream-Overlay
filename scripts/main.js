@@ -29,9 +29,25 @@ Hooks.once("init", () => {
   client("obsPassword", "OBS WebSocket Password", String, "");
 });
 
+
+// Foundry V14 public Scene Controls API: place OBS Layout under Notes.
+Hooks.on("getSceneControlButtons", controls => {
+  if (!game.user?.isGM) return;
+  const notes = controls?.notes;
+  if (!notes?.tools) return;
+  notes.tools.foundryStreamOverlay = {
+    name: "foundryStreamOverlay",
+    title: "OBS Overlay Layout",
+    icon: "fa-solid fa-tv",
+    order: Object.keys(notes.tools).length,
+    button: true,
+    visible: true,
+    onChange: () => openLayoutEditor()
+  };
+});
+
 Hooks.once("ready", async () => {
   if (!game.user?.isGM) return;
-  installLeftOverlayButton();
   for (const hook of ["updateActor","updateUser","createActor","deleteActor","updateToken"]) {
     Hooks.on(hook, () => pushOverlay());
   }
@@ -132,7 +148,7 @@ async function connectOBS() {
   ws.addEventListener("error",()=>{ obsReady=false; });
 }
 async function pushOverlay(force=false) {
-  if (!game.user?.isGM || !game.settings.get(MODULE_ID,"enabled") || !obsReady) return;
+  if (!game.user?.isGM || !game.settings.get(MODULE_ID,"enabled") || !obsReady || (layoutEditorRoot && !force)) return;
   try {
     await obsRequest("CallVendorRequest",{
       vendorName:"obs-browser", requestType:"emit_event",
@@ -166,7 +182,9 @@ async function saveLayoutPositions(){
   const pendingTheme=layoutEditorRoot.dataset.pendingTheme;if(pendingTheme&&pendingTheme!==game.settings.get(MODULE_ID,"theme"))await game.settings.set(MODULE_ID,"theme",pendingTheme);
   const box=layoutEditorRoot.getBoundingClientRect(), positions={};
   layoutEditorRoot.querySelectorAll(".fso-layout-card").forEach(card=>{
-    positions[card.dataset.userId]={x:Number((parseFloat(card.style.left)/box.width).toFixed(5)),y:Number((parseFloat(card.style.top)/box.height).toFixed(5))};
+    const baseX=parseFloat(card.style.left)||0,baseY=parseFloat(card.style.top)||0;
+    const dx=Number(card.dataset.dx||0),dy=Number(card.dataset.dy||0);
+    positions[card.dataset.userId]={x:Number(((baseX+dx)/box.width).toFixed(5)),y:Number(((baseY+dy)/box.height).toFixed(5))};
   });
   await game.settings.set(MODULE_ID,"layoutPositions",JSON.stringify(positions));await pushOverlay(true);ui.notifications.info("Stream overlay layout saved.");
 }
@@ -182,48 +200,17 @@ function openLayoutEditor(){
     const card=overlayCardElement(entry,state),pos=positions[entry.id]||{x:.02+index*.245,y:.78};
     card.style.left=`${Math.max(0,Math.min(.82,pos.x))*100}%`;card.style.top=`${Math.max(0,Math.min(.86,pos.y))*100}%`;stage.appendChild(card);
     let drag=null;
-    card.addEventListener("pointerdown",e=>{if(layoutLocked)return;const r=card.getBoundingClientRect(),sr=stage.getBoundingClientRect();drag={dx:e.clientX-r.left,dy:e.clientY-r.top,sr};});
-    card.addEventListener("pointermove",e=>{if(!drag)return;const x=Math.max(0,Math.min(drag.sr.width-card.offsetWidth,e.clientX-drag.sr.left-drag.dx));const y=Math.max(0,Math.min(drag.sr.height-card.offsetHeight,e.clientY-drag.sr.top-drag.dy));card.style.left=x+"px";card.style.top=y+"px";});
-    card.addEventListener("pointerup",()=>drag=null);card.addEventListener("pointercancel",()=>drag=null);
+    card.addEventListener("pointerdown",e=>{if(layoutLocked)return;e.preventDefault();const sr=stage.getBoundingClientRect();drag={startX:e.clientX,startY:e.clientY,baseDX:Number(card.dataset.dx||0),baseDY:Number(card.dataset.dy||0),sr};});
+    card.addEventListener("pointermove",e=>{if(!drag)return;e.preventDefault();const left=parseFloat(card.style.left)||0,top=parseFloat(card.style.top)||0;let dx=drag.baseDX+(e.clientX-drag.startX),dy=drag.baseDY+(e.clientY-drag.startY);dx=Math.max(-left,Math.min(drag.sr.width-card.offsetWidth-left,dx));dy=Math.max(-top,Math.min(drag.sr.height-card.offsetHeight-top,dy));card.dataset.dx=String(dx);card.dataset.dy=String(dy);card.style.transform=`translate3d(${dx}px,${dy}px,0)`;});
+    card.addEventListener("pointerup",()=>drag=null);card.addEventListener("pointerleave",()=>{if(drag)drag=null;});card.addEventListener("pointercancel",()=>drag=null);
   });
   const themeSelect=root.querySelector('[data-act="theme"]');themeSelect.value=state.theme;themeSelect.onchange=e=>{const theme=e.currentTarget.value;root.dataset.pendingTheme=theme;root.className=`fso-layout-editor theme-${theme}`;};
   root.querySelector('[data-act="lock"]').onclick=e=>{layoutLocked=!layoutLocked;e.currentTarget.textContent=layoutLocked?"Unlock":"Lock";root.classList.toggle("locked",layoutLocked);};
-  root.querySelector('[data-act="reset"]').onclick=()=>{stage.querySelectorAll(".fso-layout-card").forEach((c,i)=>{c.style.left=(2+i*24.5)+"%";c.style.top="78%";});};
+  root.querySelector('[data-act="reset"]').onclick=()=>{stage.querySelectorAll(".fso-layout-card").forEach((c,i)=>{c.style.left=(2+i*24.5)+"%";c.style.top="78%";c.style.transform="";c.dataset.dx="0";c.dataset.dy="0";});};
   root.querySelector('[data-act="save"]').onclick=async()=>{await saveLayoutPositions();closeLayoutEditor();};
   root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
 }
 
 
-
-function installLeftOverlayButton(){
-  if(document.getElementById("fso-left-overlay-button")) return;
-  const btn=document.createElement("button");
-  btn.id="fso-left-overlay-button";
-  btn.type="button";
-  btn.className="fso-left-overlay-button";
-  btn.title="OBS Overlay Layout";
-  btn.setAttribute("aria-label","OBS Overlay Layout");
-  btn.innerHTML='<i class="fas fa-tv"></i>';
-  btn.addEventListener("click",openLayoutEditor);
-  document.body.appendChild(btn);
-}
-
-Hooks.on("renderSidebarTab",(app,html)=>{
-  if(!game.user?.isGM) return;
-  const id=app?.options?.id||app?.id||app?.constructor?.name||"";
-  if(!String(id).toLowerCase().includes("journal")) return;
-  const root=html?.[0]||html;
-  if(!root?.querySelector||root.querySelector("#fso-journal-layout")) return;
-  const btn=document.createElement("button");
-  btn.id="fso-journal-layout";
-  btn.type="button";
-  btn.className="fso-journal-layout";
-  btn.innerHTML='<i class="fas fa-tv"></i> OBS Layout';
-  btn.title="Open Stream Overlay Layout Editor";
-  btn.addEventListener("click",openLayoutEditor);
-  const footer=root.querySelector(".directory-footer")||root.querySelector("footer");
-  if(footer) footer.appendChild(btn);
-  else root.appendChild(btn);
-});
 
 window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
