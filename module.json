@@ -1,0 +1,23 @@
+{
+  "id": "foundry-stream-overlay",
+  "title": "Foundry Stream Overlay",
+  "description": "Lightweight OBS browser-source overlay for Foundry VTT with live HP, death saves, themes, and portrait shape controls.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "siller94-art"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/overlay.css"
+  ],
+  "manifest": "https://raw.githubusercontent.com/siller94-art/Foundry-Stream-Overlay/main/module.json",
+  "download": "https://github.com/siller94-art/Foundry-Stream-Overlay/archive/refs/heads/main.zip"
+}
