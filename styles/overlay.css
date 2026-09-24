@@ -290,3 +290,170 @@ body.fso-overlay-client .fso-players {
   justify-content: center;
   align-items: flex-end;
 }
+
+
+/* v0.5.2: uniform, overflow-safe D&D 5e HUD cards */
+.fso-players {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1500px;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+  justify-content: center;
+}
+
+.fso-card {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 360px;
+  height: 150px;
+  min-height: 150px;
+  overflow: hidden;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 11px;
+  padding: 11px;
+  justify-self: center;
+}
+
+.fso-portrait-wrap {
+  box-sizing: border-box;
+  width: 92px;
+  height: 92px;
+  max-width: 100%;
+}
+
+.fso-meta {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fso-name {
+  width: 100%;
+  max-width: 100%;
+  font-size: clamp(15px, 1.1vw, 19px);
+  line-height: 1.15;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fso-role {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fso-stats-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.fso-stats-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fso-hp-track {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.fso-death {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.fso-death-label {
+  display: block;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fso-save-group {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.fso-death .fso-save-group {
+  margin-right: 8px;
+}
+
+.fso-death .fso-save-group + .fso-save-group {
+  margin-right: 0;
+}
+
+.fso-death {
+  grid-template-columns: auto auto;
+}
+
+.fso-death-label {
+  grid-column: 1 / -1;
+}
+
+.pips {
+  margin-left: 0;
+  flex: 0 0 auto;
+}
+
+.pip {
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+}
+
+@media (max-width: 1450px) {
+  .fso-players {
+    max-width: 1180px;
+    gap: 8px;
+  }
+
+  .fso-card {
+    height: 136px;
+    min-height: 136px;
+    grid-template-columns: 78px minmax(0, 1fr);
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .fso-portrait-wrap {
+    width: 74px;
+    height: 74px;
+  }
+
+  .fso-name { font-size: 15px; }
+  .fso-stats-row { font-size: 10px; gap: 3px 5px; }
+  .fso-death-label { font-size: 9px; }
+  .fso-save-group small { font-size: 8px; }
+  .pip { width: 7px; height: 7px; }
+}
+
+@media (max-width: 900px) {
+  .fso-players {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 700px;
+  }
+}
