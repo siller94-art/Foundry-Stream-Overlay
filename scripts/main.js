@@ -25,16 +25,11 @@ Hooks.once("init", () => {
   client("obsHost", "OBS WebSocket Host", String, "127.0.0.1");
   client("obsPort", "OBS WebSocket Port", Number, 4455);
   client("obsPassword", "OBS WebSocket Password", String, "");
-
-  game.settings.registerMenu(MODULE_ID, "layoutEditor", {\n    name:"Stream Overlay Layout", label:"Open Layout Editor",\n    hint:"Preview and drag the OBS cards directly over the Foundry scene.",\n    icon:"fas fa-tv", type:LayoutLauncher, restricted:true\n  });\n\n  game.settings.registerMenu(MODULE_ID, "obsHelper", {
-    name:"OBS Overlay Setup", label:"Open OBS Setup",
-    hint:"Set up the local OBS Browser Source. No Foundry login or OBS Interact is required.",
-    icon:"fas fa-broadcast-tower", type:OBSHelper, restricted:true
-  });
 });
 
 Hooks.once("ready", async () => {
   if (!game.user?.isGM) return;
+  installLayoutButton();
   for (const hook of ["updateActor","updateUser","createActor","deleteActor","updateToken"]) {
     Hooks.on(hook, () => pushOverlay());
   }
@@ -190,38 +185,22 @@ function openLayoutEditor(){
   root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
 }
 
-const BaseApplication = foundry.applications.api.ApplicationV2;
 
-class LayoutLauncher extends BaseApplication {
-  render() {
-    openLayoutEditor();
-    return this;
-  }
-}
-
-class OBSHelper extends BaseApplication {
-  render() {
-    const overlayPath="Data/modules/foundry-stream-overlay/overlay/obs-overlay.html";
-    const connected=obsReady?"Connected":"Not connected";
-    const content=`
-      <div style="text-align:left;line-height:1.5">
-        <p><b>Status:</b> ${connected}</p>
-        <p>Add an OBS <b>Browser Source</b>, enable <b>Local file</b>, and select:</p>
-        <p><code>${overlayPath}</code></p>
-        <p>Set the Browser Source to <b>1920 × 1080</b>. No Foundry login or OBS Interact is required.</p>
-      </div>`;
-    foundry.applications.api.DialogV2.wait({
-      window:{title:"Foundry Stream Overlay — OBS Setup"},
-      content,
-      buttons:[
-        {action:"reconnect",label:"Reconnect to OBS",icon:"fas fa-plug",callback:async()=>{await connectOBS();}},
-        {action:"test",label:"Send Test Data",icon:"fas fa-paper-plane",callback:async()=>{await pushOverlay(true);ui.notifications.info("Test overlay data sent to OBS.");}},
-        {action:"close",label:"Close",default:true}
-      ]
-    });
-    return this;
-  }
+function installLayoutButton(){
+  if(document.getElementById("fso-open-layout")) return;
+  const btn=document.createElement("button");
+  btn.id="fso-open-layout";
+  btn.type="button";
+  btn.title="Open Stream Overlay Layout Editor";
+  btn.innerHTML='<i class="fas fa-tv"></i><span> OBS Layout</span>';
+  Object.assign(btn.style,{
+    position:"fixed",left:"10px",top:"240px",zIndex:"99999",
+    height:"34px",padding:"0 10px",border:"1px solid #8b7b62",
+    borderRadius:"4px",background:"rgba(20,20,22,.94)",color:"#eee",
+    fontSize:"12px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,.5)"
+  });
+  btn.addEventListener("click",openLayoutEditor);
+  document.body.appendChild(btn);
 }
 
 window.FoundryStreamOverlay={connectOBS,pushOverlay,buildOverlayState,openLayoutEditor,closeLayoutEditor};
-Hooks.on("getSceneControlButtons",controls=>{\n  if(!game.user?.isGM)return;\n  const token=controls?.tokens||controls?.token;\n  if(!token)return;\n  const tool={name:"fso-layout",title:"Stream Overlay Layout",icon:"fas fa-tv",button:true,onChange:(_event,_tool,active)=>{if(active!==false)openLayoutEditor();}};\n  if(Array.isArray(token.tools)) token.tools.push({...tool,onClick:openLayoutEditor});\n  else token.tools={...(token.tools||{}),"fso-layout":tool};\n});
