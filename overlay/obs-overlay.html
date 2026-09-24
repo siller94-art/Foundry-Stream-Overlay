@@ -15,4 +15,12 @@ body{box-sizing:border-box;position:relative;padding:0}
 .wait{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 14px;background:rgba(10,10,12,.85);border:1px solid rgba(255,255,255,.2);font:13px Arial,sans-serif}
 .theme-light{--bg:rgba(230,230,230,.92);--fg:#161616}.theme-nature{--bg:rgba(27,43,31,.9)}.theme-bronze{--bg:rgba(56,40,27,.92)}
 @media(max-width:1100px){.card{height:130px;grid-template-columns:72px minmax(0,1fr);padding:8px;gap:7px}.portrait{width:68px;height:68px}.name{font-size:14px}.stats{font-size:9px;gap:3px 5px}}
-</style></head><body><main id="root"><div class="wait">Waiting for Foundry…</div></main><script src="overlay.js"></script></body></html>
+
+#stream-frame{position:fixed;inset:0;box-sizing:border-box;pointer-events:none;z-index:1;border:10px solid #171b20;box-shadow:inset 0 0 0 2px #8b744b,inset 0 0 0 5px #252b31}
+#stream-frame:before,#stream-frame:after{content:"";position:absolute;left:74px;right:74px;height:5px;background:var(--frame-fill,#20262d);border-top:1px solid var(--frame-trim,#8b744b);border-bottom:1px solid var(--frame-trim,#8b744b)}
+#stream-frame:before{top:-7px}#stream-frame:after{bottom:-7px}
+.corner{position:absolute;width:46px;height:46px;display:grid;place-items:center;box-sizing:border-box;background:var(--frame-fill,#20262d);border:2px solid var(--frame-trim,#8b744b);color:var(--frame-trim,#8b744b);font:26px Georgia,serif;font-style:normal}.tl{left:-7px;top:-7px}.tr{right:-7px;top:-7px}.bl{left:-7px;bottom:-7px}.br{right:-7px;bottom:-7px}
+.theme-dark{--frame-fill:#20262d;--frame-trim:#8b744b}.theme-light{--frame-fill:#6f685d;--frame-trim:#b69a68;--bg:rgba(76,72,66,.92);--fg:#f1eadc}.theme-nature{--frame-fill:#26372c;--frame-trim:#9a8653}.theme-bronze{--frame-fill:#49372b;--frame-trim:#b58a55}
+body:has(#root.theme-dark) #stream-frame{--frame-fill:#20262d;--frame-trim:#8b744b}body:has(#root.theme-light) #stream-frame{--frame-fill:#6f685d;--frame-trim:#b69a68}body:has(#root.theme-nature) #stream-frame{--frame-fill:#26372c;--frame-trim:#9a8653}body:has(#root.theme-bronze) #stream-frame{--frame-fill:#49372b;--frame-trim:#b58a55}
+#root{z-index:2}
+</style></head><body><div id="stream-frame" aria-hidden="true"><i class="corner tl">◇</i><i class="corner tr">◇</i><i class="corner bl">◇</i><i class="corner br">◇</i></div><main id="root"><div class="wait">Waiting for Foundry…</div></main><script src="overlay.js"></script></body></html>
