@@ -261,35 +261,6 @@ body.fso-overlay-client #foundry-stream-overlay-root .fso-twitch-chat {
   pointer-events: auto !important;
 }
 
-/* Fill the OBS browser viewport with the Foundry game client. */
-body.fso-overlay-client #board {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-}
-
-body.fso-overlay-client #board canvas,
-body.fso-overlay-client canvas#board {
-  width: 100vw !important;
-  height: 100vh !important;
-}
-
-body.fso-overlay-client .fso-root {
-  position: fixed !important;
-  inset: 0 !important;
-  box-sizing: border-box !important;
-  padding: 18px 24px !important;
-  align-items: flex-end !important;
-  justify-content: center !important;
-}
-
-body.fso-overlay-client .fso-players {
-  width: 100%;
-  justify-content: center;
-  align-items: flex-end;
-}
 
 
 /* v0.5.2: uniform, overflow-safe D&D 5e HUD cards */
@@ -456,4 +427,28 @@ body.fso-overlay-client .fso-players {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 700px;
   }
+}
+
+/* v0.5.3 OBS stability: let Foundry own WebGL canvas dimensions. */
+body.fso-overlay-client #board,
+body.fso-overlay-client #board canvas,
+body.fso-overlay-client canvas {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.fso-obs-warning {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483646;
+  max-width: 760px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(10,10,12,.92);
+  color: #fff;
+  font: 13px Arial, sans-serif;
+  text-align: center;
+  pointer-events: none;
 }
