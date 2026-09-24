@@ -141,3 +141,50 @@ html, body {
   .fso-card { width: 250px; grid-template-columns: 88px 1fr; }
   .fso-portrait-wrap { width: 82px; height: 82px; }
 }
+
+
+/* Optional Twitch chat: no iframe or rendering cost unless enabled. */
+.fso-players {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px;
+}
+
+.fso-twitch-chat {
+  position: absolute;
+  bottom: 24px;
+  width: 320px;
+  height: 430px;
+  overflow: hidden;
+  background: rgba(18,18,20,.78);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 8px 22px rgba(0,0,0,.25);
+}
+
+.fso-twitch-chat.position-left { left: 24px; }
+.fso-twitch-chat.position-right { right: 24px; }
+
+.fso-chat-title {
+  box-sizing: border-box;
+  height: 34px;
+  padding: 8px 10px;
+  color: #eee;
+  background: rgba(0,0,0,.45);
+  font: 600 14px Arial, sans-serif;
+}
+
+.fso-chat-frame {
+  display: block;
+  width: 100%;
+  height: calc(100% - 34px);
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 1200px) {
+  .fso-players { gap: 10px; }
+  .fso-twitch-chat { width: 280px; height: 360px; bottom: 12px; }
+  .fso-twitch-chat.position-left { left: 12px; }
+  .fso-twitch-chat.position-right { right: 12px; }
+}
