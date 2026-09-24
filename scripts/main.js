@@ -20,7 +20,7 @@ Hooks.once("init", () => {
   world("theme", "Overlay Theme", String, "dark", {choices:{dark:"Dark",light:"Light",nature:"Nature",bronze:"Bronze"}});
   world("showDeathSaves", "Show Death Saving Throws", Boolean, true);
   world("showGM", "Show GM Slot", Boolean, true);
-  world("layoutPositions", "Overlay Card Positions", Object, {} , {config:false});
+  world("layoutPositions", "Overlay Card Positions", String, "{}", {config:false});
 
   client("obsHost", "OBS WebSocket Host", String, "127.0.0.1");
   client("obsPort", "OBS WebSocket Port", Number, 4455);
@@ -74,7 +74,7 @@ function buildOverlayState() {
     shape:game.settings.get(MODULE_ID,"portraitShape"),
     theme:game.settings.get(MODULE_ID,"theme"),
     showDeathSaves:game.settings.get(MODULE_ID,"showDeathSaves"),
-    positions:game.settings.get(MODULE_ID,"layoutPositions")||{},
+    positions:(()=>{try{return JSON.parse(game.settings.get(MODULE_ID,"layoutPositions")||"{}")}catch{return {}}})(),
     updatedAt:Date.now()
   };
 }
@@ -162,7 +162,7 @@ async function saveLayoutPositions(){
   layoutEditorRoot.querySelectorAll(".fso-layout-card").forEach(card=>{
     positions[card.dataset.userId]={x:Number((parseFloat(card.style.left)/box.width).toFixed(5)),y:Number((parseFloat(card.style.top)/box.height).toFixed(5))};
   });
-  await game.settings.set(MODULE_ID,"layoutPositions",positions);await pushOverlay(true);ui.notifications.info("Stream overlay layout saved.");
+  await game.settings.set(MODULE_ID,"layoutPositions",JSON.stringify(positions));await pushOverlay(true);ui.notifications.info("Stream overlay layout saved.");
 }
 function openLayoutEditor(){
   if(!game.user?.isGM)return;
