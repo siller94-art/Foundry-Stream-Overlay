@@ -525,3 +525,9 @@ body.fso-overlay-client #board {
 }
 .fso-left-overlay-button:hover{color:#fff;border-color:#b89b65}
 .fso-left-overlay-button i{margin:0}
+
+/* v0.9.4 editor performance/stability */
+.fso-layout-editor{contain:layout paint;backdrop-filter:none!important}
+.fso-layout-stage{contain:layout paint}
+.fso-layout-card{will-change:left,top;backdrop-filter:none!important}
+.fso-layout-editor .fso-layout-card *{pointer-events:none}
