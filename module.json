@@ -1,8 +1,8 @@
 {
   "id": "foundry-stream-overlay",
   "title": "Foundry Stream Overlay",
-  "description": "Foundry VTT 14.368 D&D 5e OBS overlay with lightweight left-side layout editor, four matching themes, GM + 3 player HUD, saved drag positions, and obs-websocket live data.",
-  "version": "0.9.4",
+  "description": "Foundry VTT 14.368 D&D 5e OBS overlay with the editor correctly integrated under Notes scene controls, non-blocking drag editing, four matching themes, GM + 3 player HUD, and obs-websocket live data.",
+  "version": "0.9.5",
   "compatibility": {
     "minimum": "14",
     "verified": "14.368",
