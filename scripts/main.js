@@ -31,6 +31,7 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   if (!game.user?.isGM) return;
+  installLeftOverlayButton();
   for (const hook of ["updateActor","updateUser","createActor","deleteActor","updateToken"]) {
     Hooks.on(hook, () => pushOverlay());
   }
@@ -191,6 +192,20 @@ function openLayoutEditor(){
   root.querySelector('[data-act="close"]').onclick=closeLayoutEditor;
 }
 
+
+
+function installLeftOverlayButton(){
+  if(document.getElementById("fso-left-overlay-button")) return;
+  const btn=document.createElement("button");
+  btn.id="fso-left-overlay-button";
+  btn.type="button";
+  btn.className="fso-left-overlay-button";
+  btn.title="OBS Overlay Layout";
+  btn.setAttribute("aria-label","OBS Overlay Layout");
+  btn.innerHTML='<i class="fas fa-tv"></i>';
+  btn.addEventListener("click",openLayoutEditor);
+  document.body.appendChild(btn);
+}
 
 Hooks.on("renderSidebarTab",(app,html)=>{
   if(!game.user?.isGM) return;
